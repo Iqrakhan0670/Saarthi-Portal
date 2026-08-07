@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "index.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/ai-score.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "AI-server/app.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/ai/score",
+      "dest": "/api/ai-score.js"
+    },
+    {
+      "src": "/api/python-score",
+      "dest": "/AI-server/app.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.js"
+    }
+  ]
+}

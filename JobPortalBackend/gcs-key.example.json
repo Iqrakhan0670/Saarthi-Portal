@@ -1,0 +1,8 @@
+{
+  "type": "service_account",
+  "project_id": "your-project-id",
+  "private_key_id": "REPLACE_WITH_KEY_ID",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nREPLACE_PRIVATE_KEY\n-----END PRIVATE KEY-----\n",
+  "client_email": "your-service-account@your-project.iam.gserviceaccount.com",
+  "client_id": "REPLACE_WITH_CLIENT_ID"
+}

@@ -333,7 +333,7 @@ const ReportsPage = () => {
       }
       
       let uid = forcedUserId ?? updatedCandidatesUserFilter;
-      let url = new URL(`${API_URL}/api/reports/updated-candidates`);
+      let url.toString()(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/reports?action=updated-candidates`);
       url.searchParams.append('startDate', dateParams.startDate);
       url.searchParams.append('endDate', dateParams.endDate);
       if (uid && uid !== "all") {
@@ -391,7 +391,7 @@ const ReportsPage = () => {
       if (apiDeptParam === "Franchise") apiDeptParam = "Franchise";
       if (apiDeptParam === "all") apiDeptParam = "all";
       
-      const url = new URL(`${API_URL}/api/reports/dashboard`);
+      const url = new URL(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/reports?action=report-data`);
       url.searchParams.append('department', apiDeptParam);
       url.searchParams.append('startDate', dateParams.startDate);
       url.searchParams.append('endDate', dateParams.endDate);
@@ -465,7 +465,7 @@ const ReportsPage = () => {
         dateParams = getDateRangeFromPeriod(timePeriod);
       }
       
-      const url = new URL(`${API_URL}/api/reports/click-counts`);
+      const url = new URL(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/reports?action=click-counts`);
       url.searchParams.append('department', selectedDept || "all");
       url.searchParams.append('period', clickCountsPeriod);
       url.searchParams.append('startDate', dateParams.startDate);

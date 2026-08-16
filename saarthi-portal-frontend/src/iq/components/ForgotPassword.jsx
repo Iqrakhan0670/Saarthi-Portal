@@ -23,7 +23,7 @@ const ForgotPassword = () => {
     try {
       console.log('📤 Sending forgot password request');
       
-      const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/forgot-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -106,7 +106,7 @@ const UploadForm = ({ onUpload, compact = false }) => {
     setMessageType('');
 
     try {
-     const response = await fetch(`${API_BASE_URL}/api/files/upload`, {
+     const response = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/upload-file`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

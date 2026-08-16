@@ -750,7 +750,7 @@ useEffect(() => {
     setIsLoading(true);
     try {
       const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || 'http://localhost:3001';
-      const res = await fetch(`${baseUrl}/api/filters/search`, {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/filters?action=search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -786,7 +786,7 @@ useEffect(() => {
     setIsOptionsLoading(true);
     try {
       const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || 'http://localhost:3001';
-      const url = `${baseUrl}/api/filters/options?department=${encodeURIComponent(initialUserInfo.department)}`;
+      const url = `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/filters?action=options`;
       
       const response = await fetch(url);
       
@@ -831,7 +831,7 @@ useEffect(() => {
     
     try {
       const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || 'http://localhost:3001';
-      const url = `${baseUrl}/api/filters/cascading-options`;
+      const url = `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/filters?action=options`;
       
      const res = await fetch(url, {
   method: 'POST',
@@ -933,7 +933,7 @@ useEffect(() => {
     try {
       const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || 'http://localhost:3001';
       
-      const res = await fetch(`${baseUrl}/api/filters/mark-viewed`, {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/filters?action=mark-viewed`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -1022,7 +1022,7 @@ const searchPayload = {
       };
       
       const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || 'http://localhost:3001';
-      const res = await fetch(`${baseUrl}/api/filters/search`, {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/filters?action=search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(searchPayload),

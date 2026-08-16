@@ -73,7 +73,7 @@ const UserManagement = ({ onClose, onUserUpdate, onNotificationCountsChange }) =
 
   const fetchSystemSettings = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/users/system/settings`, {
+      const res = await axios.get(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/users-manage?action=system-settings`, {
         headers: { Authorization: token ? `Bearer ${token}` : '' },
       });
       if (res.data.success) {
@@ -88,7 +88,7 @@ const UserManagement = ({ onClose, onUserUpdate, onNotificationCountsChange }) =
   setLoading(true);
   try {
     // Fetch all users from users table
-    const allUsersRes = await axios.get(`${API_BASE_URL}/api/users`, {
+    const allUsersRes = await axios.get(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/users-manage?action=list`, {
       headers: { Authorization: token ? `Bearer ${token}` : '' },
     });
 
@@ -127,7 +127,7 @@ const UserManagement = ({ onClose, onUserUpdate, onNotificationCountsChange }) =
 
       // Fetch pending users separately from pending_users table
       try {
-        const pendingRes = await axios.get(`${API_BASE_URL}/api/users/pending-users`, {
+        const pendingRes = await axios.get(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/users-manage?action=pending-users`, {
           headers: { Authorization: token ? `Bearer ${token}` : '' },
         });
         
@@ -166,7 +166,7 @@ const UserManagement = ({ onClose, onUserUpdate, onNotificationCountsChange }) =
   setSettingsLoading(true);
   try {
     // First update the system setting
-    const res = await axios.post(`${API_BASE_URL}/api/users/system/settings`, 
+    const res = await axios.post(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/users-manage?action=system-settings`, 
       { key, value },
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -175,7 +175,7 @@ const UserManagement = ({ onClose, onUserUpdate, onNotificationCountsChange }) =
       // If emailAutomation is being disabled, batch update all users
       if (key === 'emailAutomation' && value === false) {
         try {
-          await axios.post(`${API_BASE_URL}/api/users/batch-update-email-automation`, 
+          await axios.post(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/users-manage?action=system-settings`, 
             { enabled: false },
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -249,8 +249,8 @@ const handleEnableDisableUser = async () => {
 
   try {
     const endpoint = action === 'disable' 
-      ? `${API_BASE_URL}/api/users/disable-user` 
-      : `${API_BASE_URL}/api/users/enable-user`;
+      ? `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/users-manage?action=disable-user` 
+      : `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/users-manage?action=enable-user`;
     
     const payload = {
       userId: user.id,

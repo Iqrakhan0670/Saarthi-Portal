@@ -39,7 +39,7 @@ const ResumeScorer = () => {
 
     try {
       // ✅ Use POST, not GET
-      const res = await axios.post(`${API_BASE_URL}/api/ai/score`, formData);
+      const res = await axios.post(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/resume-match`, formData);
 
       if (res.data.success) {
         setScore(res.data.match_percentage);

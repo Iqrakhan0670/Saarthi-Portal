@@ -1,5 +1,4 @@
-// Admin API Helper Functions
-const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+const API_BASE_URL = `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/admin-api?path=`;
 
 // Helper to handle fetch calls with auth token
 const fetchWithAuth = async (endpoint, options = {}) => {

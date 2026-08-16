@@ -1,8 +1,6 @@
 // src/components/Register.jsx - UPDATED WITHOUT TURNSTILE WITH FULL TERMS & CONDITIONS
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import PhoneInput from 'react-phone-input-2';
-import 'react-phone-input-2/lib/style.css'; 
 import logo from '../assets/logo.png';
 import { CheckCircle, Loader2, FileText, Check, X, ChevronRight, Eye, EyeOff } from 'lucide-react';
 
@@ -102,7 +100,7 @@ const Register = () => {
     
     // Check if email already exists
     try {
-      const checkResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/check-user`, {
+      const checkResponse = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/check-user`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -129,7 +127,7 @@ const Register = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/register`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -709,25 +707,19 @@ const Register = () => {
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">Phone Number *</label>
-            <PhoneInput
-              country={'in'}
+            <input
+              type="tel"
+              name="phone"
               value={formData.phone}
-              onChange={handlePhoneChange}
-              inputClass="!w-full !h-[38px] !text-sm !border-gray-300 !rounded focus:!ring-1 focus:!ring-purple-600"
-              buttonClass="!border-gray-300 !bg-gray-50 !rounded-l"
-              containerClass="w-full"
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              className="!w-full !h-[38px] !text-sm !border !border-gray-300 !rounded px-3 focus:!ring-1 focus:!ring-purple-600"
               disabled={isSubmitting}
               required
-              countryCodeEditable={false}
-              enableSearch={true}
-              inputProps={{
-                name: 'phone',
-                required: true,
-                autoComplete: 'tel'
-              }}
+              autoComplete="tel"
+              placeholder="10-digit mobile number"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Enter your 10-digit mobile number. Country code (+91) is automatically added.
+              Enter your 10-digit mobile number.
             </p>
           </div>
 

@@ -13,6 +13,7 @@ import {
   AlertCircle, CheckCircle, UserPlus, Edit, UserCheck, UserX, 
   FileUp, Key, Book, Shield, Download, Maximize2, Minimize2, ExternalLink, Bell
 } from 'lucide-react'; 
+import { supabase } from '../../supabaseClient';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL; 
 const SOCKET_URL = (API_BASE_URL || '').replace('/api', '');
@@ -356,11 +357,10 @@ const fetchAdminNotificationCounts = useCallback(async () => {
   const fetchFiles = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/files`);
-      if (response.ok) {
-        const result = await response.json();
-        setDatasets(result.success ? (result.files || []) : []);
-      } else {
+     const { data, error } = await supabase.from('files').select('*').order('created_at', { ascending: false });
+if (!error) {
+  setDatasets(data || []);
+} else {
         setDatasets([]);
       }
     } catch (error) {

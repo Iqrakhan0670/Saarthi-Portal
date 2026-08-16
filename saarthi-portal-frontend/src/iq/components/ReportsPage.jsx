@@ -333,7 +333,7 @@ const ReportsPage = () => {
       }
       
       let uid = forcedUserId ?? updatedCandidatesUserFilter;
-      let url.toString()(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/reports?action=updated-candidates`);
+      let url = new URL(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/reports?action=updated-candidates`);
       url.searchParams.append('startDate', dateParams.startDate);
       url.searchParams.append('endDate', dateParams.endDate);
       if (uid && uid !== "all") {

@@ -53,6 +53,18 @@ const PostingDashboard = () => {
     return `${weeks} week${weeks > 1 ? "s" : ""} ago`;
   };
 
+  // Helper: safely coerce any API payload into an array.
+  // Handles a bare array, or common wrapper shapes like
+  // { jobs: [...] }, { data: [...] }, { results: [...] }.
+  const toArray = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.jobs)) return payload.jobs;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.results)) return payload.results;
+    if (Array.isArray(payload?.applications)) return payload.applications;
+    return [];
+  };
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -60,6 +72,7 @@ const PostingDashboard = () => {
         const token = localStorage.getItem("token");
         if (!token) {
           console.error("No token found");
+          setLoading(false);
           return;
         }
 
@@ -75,7 +88,20 @@ const PostingDashboard = () => {
           throw new Error("Failed to fetch jobs");
         }
 
-        const jobs = await jobsResponse.json();
+        const jobsRaw = await jobsResponse.json();
+        const jobs = toArray(jobsRaw);
+
+        const isRecognizedShape =
+          Array.isArray(jobsRaw) ||
+          Array.isArray(jobsRaw?.jobs) ||
+          Array.isArray(jobsRaw?.data) ||
+          Array.isArray(jobsRaw?.results) ||
+          Array.isArray(jobsRaw?.applications);
+
+        if (!isRecognizedShape) {
+          console.warn("Unexpected /api/jobs response shape:", jobsRaw);
+        }
+
         setStats((prev) => ({ ...prev, activeJobs: jobs.length }));
 
         const now = new Date();
@@ -94,8 +120,9 @@ const PostingDashboard = () => {
         const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
         const jobsThisWeek = jobs.filter(
-          (job) => new Date(job.created_at) >= thisWeekStart,
+          (job) => job?.created_at && new Date(job.created_at) >= thisWeekStart,
         ).length;
+
         let totalApplications = 0;
         let interviewsScheduled = 0;
         let hiredThisMonth = 0;
@@ -103,18 +130,65 @@ const PostingDashboard = () => {
         let interviewsThisWeek = 0;
 
         const jobPromises = jobs.map(async (job) => {
-          const applicationsResponse = await fetch(
-            `${API_BASE_URL}/api/applications/${job.id}`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
+          try {
+            const applicationsResponse = await fetch(
+              `${API_BASE_URL}/api/applications/${job.id}`,
+              {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
               },
-            },
-          );
+            );
 
-          if (!applicationsResponse.ok) {
+            if (!applicationsResponse.ok) {
+              return {
+                id: job.id,
+                title: job.job_title || "Unknown Job",
+                location: job.job_location || "Unknown Location",
+                applications: 0,
+                status: job.status || "Active",
+                posted: calculateAgo(job.created_at),
+                views: job.views || 0,
+              };
+            }
+
+            const applicationsRaw = await applicationsResponse.json();
+            const applications = toArray(applicationsRaw);
+
+            totalApplications += applications.length;
+            interviewsScheduled += applications.filter(
+              (app) => app?.status === "interview",
+            ).length;
+
+            const hiredThisMonthCount = applications.filter(
+              (app) =>
+                app?.status === "hired" &&
+                new Date(app.updated_at || app.created_at) >= thisMonthStart,
+            ).length;
+            hiredThisMonth += hiredThisMonthCount;
+
+            applicationsToday += applications.filter(
+              (app) => app?.created_at && new Date(app.created_at) >= todayStart,
+            ).length;
+            interviewsThisWeek += applications.filter(
+              (app) =>
+                app?.status === "interview" &&
+                new Date(app.updated_at || app.created_at) >= thisWeekStart,
+            ).length;
+
+            return {
+              id: job.id,
+              title: job.job_title || "Unknown Job",
+              location: job.job_location || "Unknown Location",
+              applications: applications.length,
+              status: job.status || "Active",
+              posted: calculateAgo(job.created_at),
+              views: job.views || 0,
+            };
+          } catch (err) {
+            console.error(`Error fetching applications for job ${job?.id}:`, err);
             return {
               id: job.id,
               title: job.job_title || "Unknown Job",
@@ -125,38 +199,6 @@ const PostingDashboard = () => {
               views: job.views || 0,
             };
           }
-
-          const applications = await applicationsResponse.json();
-          totalApplications += applications.length;
-          interviewsScheduled += applications.filter(
-            (app) => app.status === "interview",
-          ).length;
-
-          const hiredThisMonthCount = applications.filter(
-            (app) =>
-              app.status === "hired" &&
-              new Date(app.updated_at || app.created_at) >= thisMonthStart,
-          ).length;
-          hiredThisMonth += hiredThisMonthCount;
-
-          applicationsToday += applications.filter(
-            (app) => new Date(app.created_at) >= todayStart,
-          ).length;
-          interviewsThisWeek += applications.filter(
-            (app) =>
-              app.status === "interview" &&
-              new Date(app.updated_at || app.created_at) >= thisWeekStart,
-          ).length;
-
-          return {
-            id: job.id,
-            title: job.job_title || "Unknown Job",
-            location: job.job_location || "Unknown Location",
-            applications: applications.length,
-            status: job.status || "Active",
-            posted: calculateAgo(job.created_at),
-            views: job.views || 0,
-          };
         });
 
         const fetchedJobs = await Promise.all(jobPromises);
@@ -164,25 +206,30 @@ const PostingDashboard = () => {
 
         let allApplications = [];
         for (const job of jobs) {
-          const applicationsResponse = await fetch(
-            `${API_BASE_URL}/api/applications/${job.id}`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
+          try {
+            const applicationsResponse = await fetch(
+              `${API_BASE_URL}/api/applications/${job.id}`,
+              {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
               },
-            },
-          );
-
-          if (applicationsResponse.ok) {
-            const applications = await applicationsResponse.json();
-            allApplications = allApplications.concat(
-              applications.map((app) => ({
-                ...app,
-                job_title: job.job_title,
-              })),
             );
+
+            if (applicationsResponse.ok) {
+              const applicationsRaw = await applicationsResponse.json();
+              const applications = toArray(applicationsRaw);
+              allApplications = allApplications.concat(
+                applications.map((app) => ({
+                  ...app,
+                  job_title: job.job_title,
+                })),
+              );
+            }
+          } catch (err) {
+            console.error(`Error fetching applications for job ${job?.id}:`, err);
           }
         }
 
@@ -243,28 +290,28 @@ const PostingDashboard = () => {
     {
       icon: <Briefcase className="w-6 h-6 text-blue-800" />,
       title: "Active Jobs",
-      value: stats.activeJobs.toString(),
+      value: (stats.activeJobs ?? 0).toString(),
       change: changes.activeJobs,
       link: "/jobs/active-jobs",
     },
     {
       icon: <Users className="w-6 h-6 text-blue-800" />,
       title: "Total Applications",
-      value: stats.totalApplications.toString(),
+      value: (stats.totalApplications ?? 0).toString(),
       change: changes.totalApplications,
       link: "/jobs/applicants",
     },
     {
       icon: <UserCheck className="w-6 h-6 text-blue-800" />,
       title: "Interviews Scheduled",
-      value: stats.interviewsScheduled.toString(),
+      value: (stats.interviewsScheduled ?? 0).toString(),
       change: changes.interviewsScheduled,
       link: "/jobs/schedule-interview",
     },
     {
       icon: <Target className="w-6 h-6 text-blue-800" />,
       title: "Hired This Month",
-      value: stats.hiredThisMonth.toString(),
+      value: (stats.hiredThisMonth ?? 0).toString(),
       change: changes.hiredThisMonth,
       link: "/jobs/hire-number",
     },
@@ -355,39 +402,45 @@ const PostingDashboard = () => {
                   {/* <button className="text-blue-800 hover:text-blue-900 text-sm font-medium">View All</button> */}
                 </div>
                 <div className="space-y-3">
-                  {activeJobs.map((job) => (
-                    <div
-                      key={job.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <h5 className="font-medium text-gray-700">
-                          {job.title}
-                        </h5>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
-                          <span className="flex items-center space-x-1">
-                            <Users className="w-4 h-4" />
-                            <span>{job.applications} applications</span>
-                          </span>
-                          <span className="flex items-center space-x-1">
-                            <MapPin className="w-4 h-4" />
-                            <span>{job.location}</span>
+                  {activeJobs.length === 0 ? (
+                    <p className="text-sm text-gray-500 py-4 text-center">
+                      No active jobs yet.
+                    </p>
+                  ) : (
+                    activeJobs.map((job) => (
+                      <div
+                        key={job.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <h5 className="font-medium text-gray-700">
+                            {job.title}
+                          </h5>
+                          <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                            <span className="flex items-center space-x-1">
+                              <Users className="w-4 h-4" />
+                              <span>{job.applications} applications</span>
+                            </span>
+                            <span className="flex items-center space-x-1">
+                              <MapPin className="w-4 h-4" />
+                              <span>{job.location}</span>
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              job.status === "Active"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {job.status}
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            job.status === "Active"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {job.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <button
@@ -426,43 +479,49 @@ const PostingDashboard = () => {
                   {/* <button className="text-blue-800 hover:text-blue-900 text-sm font-medium">View All</button> */}
                 </div>
                 <div className="space-y-3">
-                  {recentCandidates.map((candidate) => (
-                    <div
-                      key={candidate.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-blue-800 font-medium text-sm">
-                            {candidate.avatar}
+                  {recentCandidates.length === 0 ? (
+                    <p className="text-sm text-gray-500 py-4 text-center">
+                      No candidates yet.
+                    </p>
+                  ) : (
+                    recentCandidates.map((candidate) => (
+                      <div
+                        key={candidate.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-blue-800 font-medium text-sm">
+                              {candidate.avatar}
+                            </span>
+                          </div>
+                          <div>
+                            <h5 className="font-medium text-gray-700">
+                              {candidate.name}
+                            </h5>
+                            <p className="text-sm text-gray-600">
+                              {candidate.position}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          {/* <div className="flex items-center space-x-1">
+                            <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                            <span className="text-sm font-medium text-gray-700">{candidate.rating.toFixed(1)}</span>
+                          </div> */}
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              candidate.status === "Interview Scheduled"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {candidate.status}
                           </span>
                         </div>
-                        <div>
-                          <h5 className="font-medium text-gray-700">
-                            {candidate.name}
-                          </h5>
-                          <p className="text-sm text-gray-600">
-                            {candidate.position}
-                          </p>
-                        </div>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        {/* <div className="flex items-center space-x-1">
-                          <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                          <span className="text-sm font-medium text-gray-700">{candidate.rating.toFixed(1)}</span>
-                        </div> */}
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            candidate.status === "Interview Scheduled"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {candidate.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <button

@@ -154,10 +154,10 @@ const CalendarPage = () => {
   };
 
   // Group events by date key
-  const filteredInterviews = interviews.filter(inv => {
-    if (statusFilter === "all") return true;
-    return inv.status === statusFilter;
-  });
+  const filteredInterviews = (Array.isArray(interviews) ? interviews : []).filter(inv => {
+  if (statusFilter === "all") return true;
+  return inv.status === statusFilter;
+});
 
   const getInterviewsForDate = (date) => {
     const targetKey = formatDateKey(date);

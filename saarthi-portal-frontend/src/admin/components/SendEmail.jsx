@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { adminApi } from '../utils/adminApi';
 
 export default function SendEmail() {
   // Email account selection

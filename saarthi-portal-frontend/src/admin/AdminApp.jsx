@@ -1,7 +1,6 @@
 import React from "react";
-import Navbar from "./components/Navbar";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
-import Login from "./components/Login";
 import AdminManagement from "./components/AdminManagement";
 import Users from "./components/Users";
 import Jobs from "./components/Jobs";
@@ -9,50 +8,20 @@ import Resumes from "./components/Resumes";
 import SendEmail from "./components/SendEmail";
 import EmployerApprovals from "./components/EmployerApprovals";
 
-export default function App() {
-  const [view, setView] = React.useState("login");
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-
-  React.useEffect(() => {
-    const token = localStorage.getItem("adminToken");
-    if (token) {
-      setIsAuthenticated(true);
-      setView("dashboard");
-    }
-  }, []);
-
-  const onAuth = () => {
-    setIsAuthenticated(true);
-    setView("dashboard");
-  };
-
-  const handleNavigate = (v) => {
-    if (v === "login" && isAuthenticated) {
-      // Handle logout
-      setIsAuthenticated(false);
-      localStorage.removeItem("adminToken");
-    }
-    setView(v);
-  };
-
+export default function AdminApp() {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <Navbar onNavigate={handleNavigate} isAuthenticated={isAuthenticated} />
-      <main className="p-6">
-        {!isAuthenticated ? (
-          <Login onAuth={onAuth} />
-        ) : (
-          <>
-            {view === "dashboard" && <Dashboard />}
-            {view === "send-email" && <SendEmail />}
-            {view === "admins" && <AdminManagement />}
-            {view === "users" && <Users />}
-            {view === "jobs" && <Jobs />}
-            {view === "resumes" && <Resumes />}
-            {view === "employer-approvals" && <EmployerApprovals />}
-          </>
-        )}
-      </main>
+    <div className="w-full min-h-full p-4 sm:p-6 max-w-7xl mx-auto">
+      <Routes>
+        <Route index element={<Dashboard />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="employer-approvals" element={<EmployerApprovals />} />
+        <Route path="send-email" element={<SendEmail />} />
+        <Route path="admins" element={<AdminManagement />} />
+        <Route path="users" element={<Users />} />
+        <Route path="jobs" element={<Jobs />} />
+        <Route path="resumes" element={<Resumes />} />
+        <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+      </Routes>
     </div>
   );
 }

@@ -245,28 +245,28 @@ const PostingDashboard = () => {
       title: "Active Jobs",
       value: stats.activeJobs.toString(),
       change: changes.activeJobs,
-      link: "/active-jobs",
+      link: "/jobs/active-jobs",
     },
     {
       icon: <Users className="w-6 h-6 text-blue-800" />,
       title: "Total Applications",
       value: stats.totalApplications.toString(),
       change: changes.totalApplications,
-      link: "/applicants",
+      link: "/jobs/applicants",
     },
     {
       icon: <UserCheck className="w-6 h-6 text-blue-800" />,
       title: "Interviews Scheduled",
       value: stats.interviewsScheduled.toString(),
       change: changes.interviewsScheduled,
-      link: "/schedule-interview",
+      link: "/jobs/schedule-interview",
     },
     {
       icon: <Target className="w-6 h-6 text-blue-800" />,
       title: "Hired This Month",
       value: stats.hiredThisMonth.toString(),
       change: changes.hiredThisMonth,
-      link: "/hire-number",
+      link: "/jobs/hire-number",
     },
   ];
 
@@ -285,8 +285,8 @@ const PostingDashboard = () => {
               </p>
             </div>
             <button
-              onClick={() => navigate("/posting-job")}
-              className="bg-blue-800 hover:bg-blue-900 text-white px-6 py-3 rounded-lg font-semibold transition-colors inline-flex items-center space-x-2"
+              onClick={() => navigate("/jobs/posting-job")}
+              className="bg-blue-800 hover:bg-blue-900 text-white px-6 py-3 rounded-lg font-semibold transition-colors inline-flex items-center space-x-2 cursor-pointer"
             >
               <Plus className="w-5 h-5" />
               <span>Post New Job</span>
@@ -391,8 +391,8 @@ const PostingDashboard = () => {
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <button
-                    onClick={() => navigate("/active-jobs")}
-                    className="w-full bg-blue-50 hover:bg-blue-100 text-blue-800 py-2 rounded-lg font-medium transition-colors"
+                    onClick={() => navigate("/jobs/active-jobs")}
+                    className="w-full bg-blue-50 hover:bg-blue-100 text-blue-800 py-2 rounded-lg font-medium transition-colors cursor-pointer"
                   >
                     View all
                   </button>
@@ -466,8 +466,8 @@ const PostingDashboard = () => {
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <button
-                    onClick={() => navigate("/applicants")}
-                    className="w-full bg-blue-50 hover:bg-blue-100 text-blue-800 py-2 rounded-lg font-medium transition-colors"
+                    onClick={() => navigate("/jobs/applicants")}
+                    className="w-full bg-blue-50 hover:bg-blue-100 text-blue-800 py-2 rounded-lg font-medium transition-colors cursor-pointer"
                   >
                     View applicants
                   </button>
@@ -491,25 +491,25 @@ const PostingDashboard = () => {
                 icon: <Search className="w-6 h-6 text-blue-800" />,
                 title: "Search Candidates",
                 description: "Find candidates from our database",
-                link: "/find-candidate",
+                link: "/jobs/find-candidate",
               },
               {
                 icon: <MessageSquare className="w-6 h-6 text-blue-800" />,
                 title: "Send Messages",
                 description: "Communicate directly with applicants",
-                link: "/poster-message",
+                link: "/jobs/poster-message",
               },
               {
                 icon: <Star className="w-6 h-6 text-blue-800" />,
                 title: "Saved Candidates",
                 description: "Access your bookmarked candidates",
-                link: "/saved-candidates",
+                link: "/jobs/saved-candidates",
               },
               {
                 icon: <BarChart3 className="w-6 h-6 text-blue-800" />,
                 title: "View Analytics",
                 description: "Track your hiring performance",
-                link: "/view-analytics",
+                link: "/jobs/view-analytics",
               },
             ].map((action, index) => (
               <div

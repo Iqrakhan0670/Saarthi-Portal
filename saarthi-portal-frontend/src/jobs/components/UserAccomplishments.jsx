@@ -461,7 +461,7 @@ const Accomplishments = () => {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center">
             <button
-              onClick={() => navigate("/profile")}
+              onClick={() => navigate("/jobs/profile")}
               className="mr-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
               <svg

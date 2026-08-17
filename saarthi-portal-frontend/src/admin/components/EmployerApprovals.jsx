@@ -9,6 +9,7 @@ export default function EmployerApprovals() {
   const [employers, setEmployers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0 });
+  const [filterStatus, setFilterStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,9 +17,7 @@ export default function EmployerApprovals() {
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [selectedEmployerId, setSelectedEmployerId] = useState(null);
   const [approvalAction, setApprovalAction] = useState(null);
-  const [filterStatus, setFilterStatus] = useState("all"); // 'all', 'pending', 'approved', 'rejected'
-
-  const token = localStorage.getItem("adminToken");
+  const token = localStorage.getItem("adminToken") || localStorage.getItem("token");
 
   useEffect(() => {
     fetchStats();
@@ -26,6 +25,8 @@ export default function EmployerApprovals() {
   }, [page, filterStatus]);
 
   const fetchStats = async () => {
+    if (!token) return;
+
     try {
       const res = await axios.get(
         `${API_BASE_URL}/api/admin/users/approvals/stats`,
@@ -40,6 +41,8 @@ export default function EmployerApprovals() {
   };
 
   const fetchEmployers = async () => {
+    if (!token) return;
+
     setLoading(true);
     try {
       const params = { page, limit: 10 };
@@ -54,10 +57,12 @@ export default function EmployerApprovals() {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-      setEmployers(res.data.employers);
-      setTotalPages(res.data.pagination.pages);
+      setEmployers(res.data.employers || []);
+      setTotalPages(res.data.pagination?.pages || 1);
     } catch (error) {
       console.error("Error fetching employers:", error);
+      setEmployers([]);
+      setTotalPages(1);
       toast.error("Failed to fetch pending approvals");
     } finally {
       setLoading(false);

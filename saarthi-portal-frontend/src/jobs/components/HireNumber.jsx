@@ -153,7 +153,7 @@ const HireNumber = () => {
               </p>
             </div>
             <button
-              onClick={() => navigate("/poster-dashboard")}
+              onClick={() => navigate("/jobs/poster-dashboard")}
               className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors inline-flex items-center space-x-2"
             >
               <CheckCircle className="w-5 h-5" />

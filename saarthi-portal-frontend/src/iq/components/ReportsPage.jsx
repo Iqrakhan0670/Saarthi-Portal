@@ -5245,8 +5245,8 @@ const AdminStatusChartsDeprecated = () => {
           <div className="flex flex-col gap-4">
             <div className="flex items-center">
               <button
-                onClick={() => navigate("/dashboard")}
-                className="text-gray-600 hover:text-black flex items-center gap-2"
+                onClick={() => navigate("/iq/dashboard")}
+                className="text-gray-600 hover:text-black flex items-center gap-2 cursor-pointer"
               >
                 <Home className="w-5 h-5" />
                 Back to Dashboard

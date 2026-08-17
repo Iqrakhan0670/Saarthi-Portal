@@ -242,8 +242,8 @@ const SavedCandidates = () => {
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center space-x-4">
                 <button
-                  onClick={() => navigate("/poster-dashboard")}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  onClick={() => navigate("/jobs/poster-dashboard")}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="w-5 h-5 text-gray-600" />
                 </button>
@@ -370,8 +370,8 @@ const SavedCandidates = () => {
               the ones you like.
             </p>
             <button
-              onClick={() => navigate("/find-candidate")}
-              className="bg-blue-800 hover:bg-blue-900 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+              onClick={() => navigate("/jobs/find-candidate")}
+              className="bg-blue-800 hover:bg-blue-900 text-white px-6 py-3 rounded-lg font-semibold transition-colors cursor-pointer"
             >
               Find Candidates
             </button>

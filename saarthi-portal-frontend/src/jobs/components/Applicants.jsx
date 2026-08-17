@@ -346,7 +346,7 @@ const Applicants = () => {
           "pendingInterviewApplicant",
           JSON.stringify(selectedApplicant),
         );
-        setTimeout(() => navigate("/schedule-interview"), 500);
+        setTimeout(() => navigate("/jobs/schedule-interview"), 500);
       }
     } catch (e) {
       console.error("[v0] Status update error:", e);

@@ -1,33 +1,26 @@
-import React, { useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import Login from './components/login';
-import Register from './components/register';
-import Dashboard from './components/dashboard';
-import ForgotPassword from './components/ForgotPassword';
-import ResetPassword from './components/ResetPassword';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import AdvancedFilterPage from './components/AdvancedFilterPage'; 
 import ReportsPage from './components/ReportsPage';
+import UploadPage from './components/UploadPage';
+import ManageUsersPage from './components/ManageUsersPage';
 
-function App() {
-
-  // 🔥 Add this useEffect to inspect Vercel env variables
-  useEffect(() => {
-    console.log("ALL ENV VARS →", import.meta.env);
-    console.log("VITE_API_URL →", import.meta.env.VITE_API_URL);
-  }, []);
-
+function IqApp() {
   return (
-    <Routes>
-      <Route path="/" element={<Login />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password/:token" element={<ResetPassword />} />
-      <Route path="/advanced-filter" element={<AdvancedFilterPage />} />
-      <Route path="/reports" element={<ReportsPage />} />
-    </Routes>
+    <div className="w-full min-h-full">
+      <Routes>
+        <Route index element={<Navigate to="/iq/advanced-filter" replace />} />
+        <Route path="advanced-filter" element={<AdvancedFilterPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="upload" element={<UploadPage />} />
+        <Route path="manage-users" element={<ManageUsersPage />} />
+        {/* "IQ Overview" (old dashboard page) has been removed from navigation.
+            Any old links/bookmarks (including /iq/dashboard) fall through here
+            and land on the main working IQ page instead of a broken/empty page. */}
+        <Route path="*" element={<Navigate to="/iq/advanced-filter" replace />} />
+      </Routes>
+    </div>
   );
 }
 
-export default App;
+export default IqApp;

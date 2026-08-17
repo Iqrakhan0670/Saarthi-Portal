@@ -235,25 +235,25 @@ const PostingProfile = () => {
       icon: <Briefcase className="w-6 h-6 text-blue-800" />,
       label: "Active Jobs",
       value: activeJobs.toString(),
-      link: "/active-jobs",
+      link: "/jobs/active-jobs",
     },
     {
       icon: <Users className="w-6 h-6 text-blue-800" />,
       label: "Total Applicants",
       value: totalApplicants.toString(),
-      link: "/applicants",
+      link: "/jobs/applicants",
     },
     {
       icon: <Star className="w-6 h-6 text-blue-800" />,
       label: "Interviews Scheduled",
       value: interviewsScheduled.toString(),
-      link: "/schedule-interview",
+      link: "/jobs/schedule-interview",
     },
     {
       icon: <TrendingUp className="w-6 h-6 text-blue-800" />,
       label: "Hire Number",
       value: hireRate.toString(),
-      link: "/hire-number",
+      link: "/jobs/hire-number",
     },
   ];
 

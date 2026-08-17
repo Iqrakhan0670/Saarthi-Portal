@@ -1544,8 +1544,8 @@ const Profile = () => {
               </h3>
               <div className="space-y-3">
                 <button
-                  onClick={() => navigate("/education")}
-                  className="w-full flex items-center justify-between p-4 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors group"
+                  onClick={() => navigate("/jobs/education")}
+                  className="w-full flex items-center justify-between p-4 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center">
                     <svg
@@ -1593,8 +1593,8 @@ const Profile = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate("/skills")}
-                  className="w-full flex items-center justify-between p-4 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors group"
+                  onClick={() => navigate("/jobs/skills")}
+                  className="w-full flex items-center justify-between p-4 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center">
                     <svg
@@ -1636,8 +1636,8 @@ const Profile = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate("/languages")}
-                  className="w-full flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors group"
+                  onClick={() => navigate("/jobs/languages")}
+                  className="w-full flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center">
                     <svg
@@ -1679,8 +1679,8 @@ const Profile = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate("/internships")}
-                  className="w-full flex items-center justify-between p-4 bg-red-50 hover:bg-red-100 rounded-lg transition-colors group"
+                  onClick={() => navigate("/jobs/internships")}
+                  className="w-full flex items-center justify-between p-4 bg-red-50 hover:bg-red-100 rounded-lg transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center">
                     <svg
@@ -1722,8 +1722,8 @@ const Profile = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate("/projects")}
-                  className="w-full flex items-center justify-between p-4 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors group"
+                  onClick={() => navigate("/jobs/projects")}
+                  className="w-full flex items-center justify-between p-4 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center">
                     <svg
@@ -1765,8 +1765,8 @@ const Profile = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate("/employment")}
-                  className="w-full flex items-center justify-between p-4 bg-pink-50 hover:bg-pink-100 rounded-lg transition-colors group"
+                  onClick={() => navigate("/jobs/employment")}
+                  className="w-full flex items-center justify-between p-4 bg-pink-50 hover:bg-pink-100 rounded-lg transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center">
                     <svg
@@ -1808,8 +1808,8 @@ const Profile = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate("/accomplishments")}
-                  className="w-full flex items-center justify-between p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors group"
+                  onClick={() => navigate("/jobs/accomplishments")}
+                  className="w-full flex items-center justify-between p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors group cursor-pointer"
                 >
                   <div className="flex items-center">
                     <svg

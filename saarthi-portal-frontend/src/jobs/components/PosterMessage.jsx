@@ -241,7 +241,7 @@ const PosterMessage = () => {
           <div className="flex justify-between items-center mb-8">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate("/poster-dashboard")}
+                onClick={() => navigate("/jobs/poster-dashboard")}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600" />

@@ -2,7 +2,7 @@ const API_BASE_URL = `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/admin-api?p
 
 // Helper to handle fetch calls with auth token
 const fetchWithAuth = async (endpoint, options = {}) => {
-  const token = localStorage.getItem("adminToken");
+  const token = localStorage.getItem("adminToken") || localStorage.getItem("token");
   const defaultHeaders = {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),

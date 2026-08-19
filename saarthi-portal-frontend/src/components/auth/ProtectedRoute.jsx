@@ -1,9 +1,10 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { hasRouteAccess, getDefaultDashboard } from '../../config/rbac';
 
 export default function ProtectedRoute({ children, requiredRoles = [] }) {
-  const { isAuthenticated, loading, user } = useAuth();
+  const { isAuthenticated, loading, user, role } = useAuth();
   const location = useLocation();
 
   // Check fallback token in localStorage if AuthContext is still initializing
@@ -24,14 +25,20 @@ export default function ProtectedRoute({ children, requiredRoles = [] }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Role verification if specified
+  // Centralized RBAC Route Verification
+  const currentRole = role || user?.role || 'job_seeker';
+  const isAllowed = hasRouteAccess(currentRole, location.pathname);
+
+  if (!isAllowed) {
+    const targetDashboard = getDefaultDashboard(currentRole);
+    return <Navigate to={targetDashboard} replace />;
+  }
+
+  // Explicit role verification if passed in props
   if (requiredRoles.length > 0 && user) {
-    const userRole = user.role?.toLowerCase() || '';
-    const isAdmin = user.is_admin || userRole === 'admin';
-    
-    // Admins bypass role checks
-    if (!isAdmin && !requiredRoles.map((r) => r.toLowerCase()).includes(userRole)) {
-      return <Navigate to="/dashboard" replace />;
+    const isExplicitlyAllowed = requiredRoles.map((r) => r.toLowerCase()).includes(currentRole.toLowerCase());
+    if (!isExplicitlyAllowed && currentRole !== 'admin') {
+      return <Navigate to={getDefaultDashboard(currentRole)} replace />;
     }
   }
 

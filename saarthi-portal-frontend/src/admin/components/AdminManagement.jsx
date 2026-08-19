@@ -195,7 +195,7 @@ export default function AdminManagement() {
   // We calculate these directly from the 'admins' list we already have
   const activeAdmins = admins.filter(a => !a.deleted_at).length;
   const revokedAdmins = admins.filter(a => a.deleted_at).length;
-  const superUsers = admins.filter(a => a.can_create_admins || a.can_revoke_admins).length;
+  const privilegedAdmins = admins.filter(a => a.can_create_admins || a.can_revoke_admins).length;
 
   if (listLoading) {
     return (
@@ -238,7 +238,7 @@ export default function AdminManagement() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-purple-600">
             <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">High Privilege Users</h3>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-gray-900">{superUsers}</span>
+              <span className="text-3xl font-bold text-gray-900">{privilegedAdmins}</span>
               <span className="text-sm text-gray-500">users</span>
             </div>
             <div className="mt-2 text-xs text-purple-600 font-medium">

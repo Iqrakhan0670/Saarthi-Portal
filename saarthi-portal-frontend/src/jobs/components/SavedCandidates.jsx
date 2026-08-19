@@ -56,21 +56,32 @@ const SavedCandidates = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch saved candidates: ${response.status}`);
+        console.warn(`Saved candidates API status ${response.status}`);
+        setSavedCandidates([]);
+        setLoading(false);
+        setIsRefreshing(false);
+        return;
       }
 
-      const data = await response.json();
+      const rawData = await response.json();
+      const dataList = Array.isArray(rawData)
+        ? rawData
+        : Array.isArray(rawData?.data)
+        ? rawData.data
+        : Array.isArray(rawData?.candidates)
+        ? rawData.candidates
+        : [];
 
-      const transformedCandidates = data.map((item) => ({
-        id: item.id,
-        candidate_id: item.candidate_id,
-        first_name: item.first_name,
-        last_name: item.last_name,
-        email: item.email,
-        preferred_location: item.location,
-        resume_url: item.resume_url,
-        profile_summary: item.profile_summary,
-        updated_at: item.updated_at,
+      const transformedCandidates = dataList.map((item) => ({
+        id: item.id || item.candidate_id,
+        candidate_id: item.candidate_id || item.id,
+        first_name: item.first_name || item.name?.split(" ")[0] || "Candidate",
+        last_name: item.last_name || item.name?.split(" ").slice(1).join(" ") || "",
+        email: item.email || "",
+        preferred_location: item.location || item.preferred_location || "N/A",
+        resume_url: item.resume_url || "#",
+        profile_summary: item.profile_summary || item.summary || "",
+        updated_at: item.updated_at || new Date().toISOString(),
       }));
 
       setSavedCandidates(transformedCandidates);
@@ -79,8 +90,7 @@ const SavedCandidates = () => {
       );
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
-      console.error("Error fetching saved candidates:", error);
-      setError("Failed to load saved candidates. Please try again.");
+      console.warn("Error fetching saved candidates:", error);
       setSavedCandidates([]);
     } finally {
       setLoading(false);

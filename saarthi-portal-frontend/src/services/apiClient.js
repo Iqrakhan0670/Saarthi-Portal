@@ -29,6 +29,17 @@ export const getAuthHeaders = (customHeaders = {}, isFormData = false) => {
         headers.Authorization = `Bearer ${token}`;
     }
 
+    if (typeof window !== 'undefined') {
+        const userRole = localStorage.getItem('userRole');
+        const userId = localStorage.getItem('userId');
+        if (userRole && !headers['X-User-Role']) {
+            headers['X-User-Role'] = userRole;
+        }
+        if (userId && !headers['X-User-Id']) {
+            headers['X-User-Id'] = userId;
+        }
+    }
+
     return headers;
 };
 

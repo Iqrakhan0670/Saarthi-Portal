@@ -67,14 +67,23 @@ const FindCandidate = () => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch saved candidates");
+        setSavedCandidates(new Set());
+        return;
       }
 
-      const data = await response.json();
-      const savedIds = new Set(data.map((item) => item.candidate_id));
+      const rawData = await response.json();
+      const dataList = Array.isArray(rawData)
+        ? rawData
+        : Array.isArray(rawData?.data)
+        ? rawData.data
+        : Array.isArray(rawData?.candidates)
+        ? rawData.candidates
+        : [];
+
+      const savedIds = new Set(dataList.map((item) => item.candidate_id || item.id));
       setSavedCandidates(savedIds);
     } catch (error) {
-      console.error("Error fetching saved candidates:", error);
+      console.warn("Error fetching saved candidates:", error);
       setSavedCandidates(new Set());
     }
   };

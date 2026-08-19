@@ -133,26 +133,50 @@ const PostingProfile = () => {
           throw new Error("Failed to fetch jobs");
         }
 
-        const jobsData = await response.json();
-        // Assuming data is an array of jobs posted by the user, and all are considered active
-        setActiveJobs(jobsData.length);
+        const rawJobs = await response.json();
+        const jobsList = Array.isArray(rawJobs)
+          ? rawJobs
+          : Array.isArray(rawJobs?.jobs)
+          ? rawJobs.jobs
+          : Array.isArray(rawJobs?.data)
+          ? rawJobs.data
+          : [];
+
+        setActiveJobs(jobsList.length);
+
+        if (jobsList.length === 0) {
+          setTotalApplicants(0);
+          setInterviewsScheduled(0);
+          setHireRate(0);
+          return;
+        }
 
         // Fetch applications for each job
-        const applicationsPromises = jobsData.map((job) =>
-          fetch(`${API_BASE_URL}/api/applications/${job.id}`, {
+        const applicationsPromises = jobsList.map((job) =>
+          fetch(`${API_BASE_URL}/api/applications/${job.id || job.job_id}`, {
             method: "GET",
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
           })
-            .then((res) => (res.ok ? res.json() : []))
+            .then(async (res) => {
+              if (!res.ok) return [];
+              const appsData = await res.json();
+              return Array.isArray(appsData)
+                ? appsData
+                : Array.isArray(appsData?.applications)
+                ? appsData.applications
+                : Array.isArray(appsData?.data)
+                ? appsData.data
+                : [];
+            })
             .catch(() => []),
         );
 
         const applicationsResults = await Promise.all(applicationsPromises);
         const total = applicationsResults.reduce(
-          (sum, apps) => sum + apps.length,
+          (sum, apps) => sum + (Array.isArray(apps) ? apps.length : 0),
           0,
         );
         setTotalApplicants(total);

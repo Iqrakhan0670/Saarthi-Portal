@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { ROLES, normalizeRole, getDefaultDashboard } from '../config/rbac';
 
 const AuthContext = createContext(null);
 
@@ -14,13 +15,12 @@ export const AuthProvider = ({ children }) => {
     const email = localStorage.getItem('userEmail') || '';
     const department = localStorage.getItem('userDept') || localStorage.getItem('department') || '';
     const employee_id = localStorage.getItem('employeeId') || '';
+    const storedRole = localStorage.getItem('userRole') || localStorage.getItem('role');
     const isAdmin = localStorage.getItem('isAdmin') === 'true' || !!localStorage.getItem('adminToken');
     
-    let role = 'job_seeker';
-    if (isAdmin) {
-      role = 'admin';
-    } else if (department || employee_id) {
-      role = 'employee';
+    let role = normalizeRole(storedRole);
+    if (isAdmin && role !== ROLES.ADMIN) {
+      role = ROLES.ADMIN;
     }
 
     const userData = {
@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
       role,
       department,
       employee_id,
-      is_admin: isAdmin,
+      is_admin: role === ROLES.ADMIN,
     };
 
     localStorage.setItem('user', JSON.stringify(userData));
@@ -49,6 +49,7 @@ export const AuthProvider = ({ children }) => {
         if (storedUser) {
           try {
             const parsedUser = JSON.parse(storedUser);
+            parsedUser.role = normalizeRole(parsedUser.role);
             setUser(parsedUser);
           } catch (e) {
             console.error('Failed to parse stored user:', e);
@@ -69,15 +70,18 @@ export const AuthProvider = ({ children }) => {
   const login = (authData) => {
     const jwtToken = authData.token || authData.access_token || 'token_' + Date.now();
     
+    const rawRole = authData.role || authData.user?.role || (authData.is_admin ? ROLES.ADMIN : (authData.department ? ROLES.IQ_ANALYST : ROLES.JOB_SEEKER));
+    const role = normalizeRole(rawRole);
+
     // Normalize user object
     const normalizedUser = {
       id: authData.id || authData.user?.id || authData.userId || 'user_' + Date.now(),
       name: authData.name || authData.user?.name || authData.userName || authData.email?.split('@')[0] || 'User',
       email: authData.email || authData.user?.email || authData.userEmail || '',
-      role: (authData.role || authData.user?.role || (authData.is_admin ? 'admin' : (authData.department ? 'employee' : 'job_seeker'))).toLowerCase(),
+      role,
       department: authData.department || authData.user?.department || '',
       employee_id: authData.employee_id || authData.employeeId || '',
-      is_admin: Boolean(authData.is_admin || authData.role === 'admin' || authData.adminToken),
+      is_admin: role === ROLES.ADMIN,
       can_create_admins: Boolean(authData.can_create_admins),
     };
 
@@ -85,17 +89,18 @@ export const AuthProvider = ({ children }) => {
     setToken(jwtToken);
     setUser(normalizedUser);
 
-    // Synchronize to localStorage across all legacy keys for 100% submodule compatibility
+    // Synchronize to localStorage across keys
     localStorage.setItem('token', jwtToken);
     localStorage.setItem('user', JSON.stringify(normalizedUser));
+    localStorage.setItem('userRole', normalizedUser.role);
     localStorage.setItem('userId', normalizedUser.id);
     localStorage.setItem('userName', normalizedUser.name);
     localStorage.setItem('userEmail', normalizedUser.email);
     localStorage.setItem('userDept', normalizedUser.department);
     localStorage.setItem('employeeId', normalizedUser.employee_id);
-    localStorage.setItem('isAdmin', normalizedUser.is_admin ? 'true' : 'false');
+    localStorage.setItem('isAdmin', normalizedUser.role === ROLES.ADMIN ? 'true' : 'false');
     
-    if (normalizedUser.is_admin) {
+    if (normalizedUser.role === ROLES.ADMIN) {
       localStorage.setItem('adminToken', jwtToken);
     }
   };
@@ -107,6 +112,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('adminToken');
     localStorage.removeItem('user');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('role');
     localStorage.removeItem('userId');
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
@@ -120,34 +127,46 @@ export const AuthProvider = ({ children }) => {
   const updateUser = (updates) => {
     setUser((prev) => {
       const updated = { ...prev, ...updates };
+      if (updates.role) {
+        updated.role = normalizeRole(updates.role);
+      }
       localStorage.setItem('user', JSON.stringify(updated));
+      localStorage.setItem('userRole', updated.role);
       if (updates.name) localStorage.setItem('userName', updates.name);
       if (updates.email) localStorage.setItem('userEmail', updates.email);
       return updated;
     });
   };
 
-  // Switch active role view (e.g. for Admin or multi-role testing)
+  // Switch active role view
   const switchRole = (newRole) => {
     if (!user) return;
-    const updated = { ...user, role: newRole };
+    const normalized = normalizeRole(newRole);
+    const updated = { ...user, role: normalized };
     setUser(updated);
     localStorage.setItem('user', JSON.stringify(updated));
+    localStorage.setItem('userRole', normalized);
   };
+
+  const activeRole = user ? normalizeRole(user.role) : ROLES.JOB_SEEKER;
 
   const value = {
     user,
     token,
     loading,
     isAuthenticated: !!token && !!user,
+    role: activeRole,
+    defaultDashboard: user ? getDefaultDashboard(activeRole) : '/login',
     login,
     logout,
     updateUser,
     switchRole,
-    isAdmin: user?.is_admin || user?.role === 'admin',
-    isEmployer: user?.role === 'job_poster' || user?.role === 'employer' || user?.role === 'recruiter' || user?.role === 'poster',
-    isSeeker: user?.role === 'job_seeker' || user?.role === 'seeker',
-    isEmployee: user?.role === 'employee' || user?.role === 'iq_ops' || !!user?.department,
+    isAdmin: activeRole === ROLES.ADMIN,
+    isRecruitment: activeRole === ROLES.RECRUITMENT,
+    isBD: activeRole === ROLES.BD,
+    isIQAnalyst: activeRole === ROLES.IQ_ANALYST,
+    isEmployer: activeRole === ROLES.EMPLOYER,
+    isSeeker: activeRole === ROLES.JOB_SEEKER,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

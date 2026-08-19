@@ -22,8 +22,14 @@ import {
 } from 'lucide-react';
 
 export default function UnifiedDashboard() {
-  const { user, isAdmin, isEmployer, isSeeker, isEmployee } = useAuth();
+  const { user, role, defaultDashboard, isAdmin, isEmployer, isSeeker, isRecruitment, isBD, isIQAnalyst } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (defaultDashboard && defaultDashboard !== '/dashboard') {
+      navigate(defaultDashboard, { replace: true });
+    }
+  }, [role, defaultDashboard, navigate]);
 
   const [stats, setStats] = useState({
     candidateCount: '24,850+',

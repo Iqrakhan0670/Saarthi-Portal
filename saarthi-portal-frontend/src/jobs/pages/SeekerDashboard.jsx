@@ -51,9 +51,35 @@ const SeekerDashboard = () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-      if (res.data.success) {
-        setStats(res.data.stats);
-        setApplications(res.data.recentApps);
+
+      const rawStats =
+        res?.data?.stats ||
+        (res?.data && typeof res.data === "object" && res.data.applied !== undefined
+          ? res.data
+          : null);
+
+      if (rawStats) {
+        setStats({
+          applied: Number(rawStats.applied) || 0,
+          shortlisted: Number(rawStats.shortlisted) || 0,
+          rejected: Number(rawStats.rejected) || 0,
+          hired: Number(rawStats.hired) || 0,
+          total:
+            Number(rawStats.total) ||
+            (Number(rawStats.applied) || 0) +
+              (Number(rawStats.shortlisted) || 0) +
+              (Number(rawStats.rejected) || 0) +
+              (Number(rawStats.hired) || 0),
+        });
+      }
+
+      const rawApps =
+        res?.data?.recentApps ||
+        res?.data?.applications ||
+        (Array.isArray(res?.data) ? res.data : null);
+
+      if (rawApps && Array.isArray(rawApps)) {
+        setApplications(rawApps);
       }
     } catch (error) {
       console.error("Error fetching dashboard:", error);
@@ -62,11 +88,21 @@ const SeekerDashboard = () => {
     }
   };
 
+  const currentStats = stats || {
+    applied: 0,
+    shortlisted: 0,
+    rejected: 0,
+    hired: 0,
+    total: 0,
+  };
+
+  const currentApps = Array.isArray(applications) ? applications : [];
+
   const chartData = [
-    { name: "Applied", value: stats.applied },
-    { name: "Shortlisted", value: stats.shortlisted },
-    { name: "Rejected", value: stats.rejected },
-    { name: "Hired", value: stats.hired },
+    { name: "Applied", value: currentStats.applied ?? 0 },
+    { name: "Shortlisted", value: currentStats.shortlisted ?? 0 },
+    { name: "Rejected", value: currentStats.rejected ?? 0 },
+    { name: "Hired", value: currentStats.hired ?? 0 },
   ].filter((item) => item.value > 0);
 
   if (loading)
@@ -108,25 +144,25 @@ const SeekerDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="Total Applied"
-          count={stats.total}
+          count={currentStats.total ?? 0}
           icon={FileText}
           color="bg-blue-50 text-blue-600"
         />
         <StatCard
           title="Shortlisted"
-          count={stats.shortlisted}
+          count={currentStats.shortlisted ?? 0}
           icon={Clock}
           color="bg-amber-50 text-amber-600"
         />
         <StatCard
           title="Rejected"
-          count={stats.rejected}
+          count={currentStats.rejected ?? 0}
           icon={XCircle}
           color="bg-red-50 text-red-600"
         />
         <StatCard
           title="Hired"
-          count={stats.hired}
+          count={currentStats.hired ?? 0}
           icon={CheckCircle}
           color="bg-green-50 text-green-600"
         />
@@ -196,18 +232,18 @@ const SeekerDashboard = () => {
                 </tr>
               </thead>
               <tbody className="text-sm">
-                {applications.length > 0 ? (
-                  applications.map((app) => (
+                {currentApps.length > 0 ? (
+                  currentApps.map((app) => (
                     <tr
-                      key={app.id}
+                      key={app.id || Math.random()}
                       className="group hover:bg-gray-50 transition"
                     >
                       <td className="py-4 font-semibold text-gray-800">
-                        {app.job_title}
+                        {app.job_title || app.title || "N/A"}
                       </td>
-                      <td className="py-4 text-gray-600">{app.company_name}</td>
+                      <td className="py-4 text-gray-600">{app.company_name || app.company || "N/A"}</td>
                       <td className="py-4 text-gray-500">
-                        {new Date(app.applied_at).toLocaleDateString()}
+                        {app.applied_at ? new Date(app.applied_at).toLocaleDateString() : "N/A"}
                       </td>
                       <td className="py-4">
                         <StatusBadge status={app.status} />

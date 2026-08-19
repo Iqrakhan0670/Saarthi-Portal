@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { ROLE_NAV_ITEMS, ROLE_LABELS, normalizeRole, getDefaultDashboard } from '../../config/rbac';
 import {
   LayoutDashboard,
   Search,
@@ -26,34 +27,51 @@ import {
   Clock
 } from 'lucide-react';
 
+const ICON_MAP = {
+  LayoutDashboard,
+  Search,
+  FileSpreadsheet,
+  Briefcase,
+  PlusCircle,
+  Users,
+  Bookmark,
+  Calendar,
+  Sparkles,
+  ShieldCheck,
+  CheckCircle2,
+  FileText,
+  Mail,
+  TrendingUp,
+  Building2,
+  Clock,
+  User,
+};
+
+const renderIcon = (iconName, className = "w-4 h-4 mr-2.5 text-blue-500") => {
+  const IconComponent = ICON_MAP[iconName] || Briefcase;
+  return <IconComponent className={className} />;
+};
+
 export default function AppLayout() {
-  const { user, logout, isAdmin, isEmployer, isSeeker, isEmployee } = useAuth();
+  const { user, logout, role, isAdmin, isEmployer } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [iqOpen, setIqOpen] = useState(true);
-  const [recruitmentOpen, setRecruitmentOpen] = useState(true);
-  const [managementOpen, setManagementOpen] = useState(true);
-  const [adminOpen, setAdminOpen] = useState(true);
 
   const pathname = location.pathname;
-  const canAccessEmployerTools = isEmployer || isAdmin;
-  const canAccessManagement = isAdmin || isEmployee;
+  const currentRole = role || normalizeRole(user?.role);
+  const roleLabel = ROLE_LABELS[currentRole] || 'User';
+
+  const navGroups = ROLE_NAV_ITEMS[currentRole] || ROLE_NAV_ITEMS.job_seeker;
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const roleLabel = isAdmin
-    ? 'Administrator'
-    : isEmployer
-    ? 'Employer / Recruiter'
-    : isEmployee
-    ? 'Operations Staff'
-    : 'Job Seeker';
+  const dashboardPath = getDefaultDashboard(currentRole);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800 antialiased">
@@ -71,7 +89,7 @@ export default function AppLayout() {
               {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
-            <Link to="/dashboard" className="flex items-center space-x-3 group">
+            <Link to={dashboardPath} className="flex items-center space-x-3 group">
               <div className="w-10 h-10 bg-gradient-to-tr from-blue-700 to-indigo-600 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-sm group-hover:scale-105 transition-transform">
                 S
               </div>
@@ -87,35 +105,42 @@ export default function AppLayout() {
           {/* Center: Global Quick Section Links */}
           <div className="hidden xl:flex items-center space-x-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200">
             <Link
-              to="/dashboard"
+              to={dashboardPath}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                pathname === '/dashboard' || pathname === '/'
+                pathname === '/dashboard' || pathname === dashboardPath
                   ? 'bg-white text-blue-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Dashboard
             </Link>
-            <Link
-              to="/iq/advanced-filter"
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                pathname.startsWith('/iq')
-                  ? 'bg-white text-purple-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Saarthi IQ
-            </Link>
-            <Link
-              to={isEmployer ? "/jobs/poster-dashboard" : "/jobs/dashboard"}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                pathname.startsWith('/jobs')
-                  ? 'bg-white text-blue-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Recruitment
-            </Link>
+
+            {(isAdmin || currentRole === 'iq_analyst' || currentRole === 'recruitment' || currentRole === 'bd') && (
+              <Link
+                to="/iq/advanced-filter"
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  pathname.startsWith('/iq')
+                    ? 'bg-white text-purple-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Saarthi IQ
+              </Link>
+            )}
+
+            {(isAdmin || currentRole === 'employer' || currentRole === 'recruitment' || currentRole === 'bd' || currentRole === 'job_seeker') && (
+              <Link
+                to={isEmployer || currentRole === 'recruitment' ? "/jobs/poster-dashboard" : "/jobs/dashboard"}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  pathname.startsWith('/jobs')
+                    ? 'bg-white text-blue-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {currentRole === 'job_seeker' ? 'Job Portal' : 'Recruitment'}
+              </Link>
+            )}
+
             {isAdmin && (
               <Link
                 to="/admin/dashboard"
@@ -133,9 +158,9 @@ export default function AppLayout() {
           {/* Right: Actions, Role Badge & User Account */}
           <div className="flex items-center space-x-3 sm:space-x-4">
             {/* Role Badge */}
-            <span className="hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-800 border border-blue-200 shadow-2xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mr-2 animate-pulse"></span>
-              {roleLabel}
+            <span className="hidden md:inline-flex items-center px-3.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-900 border border-blue-200 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-blue-600 mr-2 animate-pulse"></span>
+              Role: {roleLabel}
             </span>
 
             {/* Quick Calendar Link */}
@@ -158,7 +183,7 @@ export default function AppLayout() {
                 </div>
                 <div className="text-left hidden lg:block max-w-[130px]">
                   <p className="text-xs font-bold text-slate-800 truncate leading-tight">{user?.name || 'My Account'}</p>
-                  <p className="text-[11px] text-slate-500 truncate leading-tight">{user?.email || 'user@saarthi.com'}</p>
+                  <p className="text-[11px] text-slate-500 truncate leading-tight">{roleLabel}</p>
                 </div>
                 <ChevronDown className="w-4 h-4 text-slate-400" />
               </button>
@@ -171,15 +196,15 @@ export default function AppLayout() {
                   <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Signed in as</p>
                     <p className="text-sm font-bold text-slate-900 truncate mt-0.5">{user?.name || 'User'}</p>
-                    <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                    <p className="text-xs text-blue-600 font-semibold truncate">{roleLabel}</p>
                   </div>
 
                   <div className="py-1">
                     <Link
-                      to="/dashboard"
+                      to={dashboardPath}
                       className="flex items-center px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                     >
-                      <LayoutDashboard className="w-4 h-4 mr-3 text-slate-400" /> Dashboard
+                      <LayoutDashboard className="w-4 h-4 mr-3 text-slate-400" /> My Dashboard
                     </Link>
                     <Link
                       to={isEmployer ? "/jobs/poster-profile" : "/jobs/profile"}
@@ -219,379 +244,49 @@ export default function AppLayout() {
         <aside className="hidden lg:flex flex-col w-72 border-r border-slate-200 bg-white py-6 px-4 shrink-0 min-h-[calc(100vh-4rem)]">
           <div className="flex-1 space-y-6 overflow-y-auto pr-1">
             
-            {/* Primary Dashboard Link */}
-            <div>
-              <Link
-                to="/dashboard"
-                className={`flex items-center px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                  pathname === '/dashboard' || pathname === '/'
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                }`}
-              >
-                <LayoutDashboard className="w-5 h-5 mr-3" />
-                <span>Dashboard</span>
-              </Link>
-            </div>
-
-            {/* SECTION 1: Candidate Intelligence (Saarthi IQ) */}
-            <div className="space-y-1">
-              <button
-                onClick={() => setIqOpen(!iqOpen)}
-                className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider hover:text-slate-700 cursor-pointer"
-              >
-                <div className="flex items-center space-x-2">
-                  <span>Candidate Intelligence</span>
+            {/* Dynamic Role Navigation Groups */}
+            {navGroups.map((group, groupIdx) => (
+              <div key={groupIdx} className="space-y-2">
+                <p className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  {group.group}
+                </p>
+                <div className="space-y-1">
+                  {group.items.map((item, itemIdx) => {
+                    const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path + '?'));
+                    return (
+                      <Link
+                        key={itemIdx}
+                        to={item.path}
+                        className={`flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                          isActive
+                            ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                        }`}
+                      >
+                        {renderIcon(item.icon, `w-4 h-4 mr-3 ${isActive ? 'text-white' : 'text-slate-500'}`)}
+                        <span className="truncate">{item.label}</span>
+                      </Link>
+                    );
+                  })}
                 </div>
-                {iqOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-              </button>
-
-              {iqOpen && (
-                <div className="space-y-1 pl-2 pt-1 border-l-2 border-purple-100 ml-3">
-                  <Link
-                    to="/iq/advanced-filter"
-                    className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                      pathname === '/iq/advanced-filter'
-                        ? 'bg-purple-50 text-purple-800'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                    }`}
-                  >
-                    <span>Candidate Search & Filters</span>
-                  </Link>
-
-                  <Link
-                    to="/iq/reports"
-                    className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                      pathname === '/iq/reports'
-                        ? 'bg-purple-50 text-purple-800'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                    }`}
-                  >
-                    <span>Activity Reports</span>
-                  </Link>
-
-                  <Link
-                    to="/iq/upload"
-                    className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                      pathname === '/iq/upload'
-                        ? 'bg-purple-50 text-purple-800'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                    }`}
-                  >
-                    <span>Upload Data</span>
-                  </Link>
-
-                  {isAdmin && (
-                    <Link
-                      to="/iq/manage-users"
-                      className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                        pathname === '/iq/manage-users'
-                          ? 'bg-purple-50 text-purple-800'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                      }`}
-                    >
-                      <span>Manage IQ Users</span>
-                    </Link>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* SECTION 2: Recruitment & Jobs */}
-            <div className="space-y-1">
-              <button
-                onClick={() => setRecruitmentOpen(!recruitmentOpen)}
-                className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider hover:text-slate-700 cursor-pointer"
-              >
-                <div className="flex items-center space-x-2">
-                  <Briefcase className="w-4 h-4 text-blue-600" />
-                  <span>Recruitment & Jobs</span>
-                </div>
-                {recruitmentOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-              </button>
-
-              {recruitmentOpen && (
-                <div className="space-y-1 pl-2 pt-1 border-l-2 border-blue-100 ml-3">
-                  <Link
-                    to="/jobs/jobs"
-                    className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                      pathname === '/jobs/jobs' || pathname === '/jobs'
-                        ? 'bg-blue-50 text-blue-800'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                    }`}
-                  >
-                    <Search className="w-4 h-4 mr-2.5 text-blue-500" />
-                    <span>Job Board</span>
-                  </Link>
-
-                  {canAccessEmployerTools ? (
-                    <>
-                      <Link
-                        to="/jobs/poster-dashboard"
-                        className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                          pathname === '/jobs/poster-dashboard'
-                            ? 'bg-blue-50 text-blue-800'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                        }`}
-                      >
-                        <LayoutDashboard className="w-4 h-4 mr-2.5 text-blue-500" />
-                        <span>Employer Pipeline</span>
-                      </Link>
-                      <Link
-                        to="/jobs/posting-job"
-                        className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                          pathname === '/jobs/posting-job'
-                            ? 'bg-blue-50 text-blue-800'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                        }`}
-                      >
-                        <PlusCircle className="w-4 h-4 mr-2.5 text-blue-500" />
-                        <span>Post a New Job</span>
-                      </Link>
-                      <Link
-                        to="/jobs/active-jobs"
-                        className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                          pathname === '/jobs/active-jobs'
-                            ? 'bg-blue-50 text-blue-800'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                        }`}
-                      >
-                        <Briefcase className="w-4 h-4 mr-2.5 text-blue-500" />
-                        <span>Active Job Posts</span>
-                      </Link>
-                      <Link
-                        to="/jobs/applicants"
-                        className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                          pathname === '/jobs/applicants'
-                            ? 'bg-blue-50 text-blue-800'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                        }`}
-                      >
-                        <Users className="w-4 h-4 mr-2.5 text-blue-500" />
-                        <span>Applicants Pipeline</span>
-                      </Link>
-                      <Link
-                        to="/jobs/find-candidate"
-                        className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                          pathname === '/jobs/find-candidate'
-                            ? 'bg-blue-50 text-blue-800'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                        }`}
-                      >
-                        <Search className="w-4 h-4 mr-2.5 text-blue-500" />
-                        <span>Find Candidates</span>
-                      </Link>
-                      <Link
-                        to="/jobs/saved-candidates"
-                        className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                          pathname === '/jobs/saved-candidates'
-                            ? 'bg-blue-50 text-blue-800'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                        }`}
-                      >
-                        <Bookmark className="w-4 h-4 mr-2.5 text-blue-500" />
-                        <span>Saved Candidates</span>
-                      </Link>
-                      <Link
-                        to="/jobs/view-analytics"
-                        className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                          pathname === '/jobs/view-analytics'
-                            ? 'bg-blue-50 text-blue-800'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                        }`}
-                      >
-                        <TrendingUp className="w-4 h-4 mr-2.5 text-blue-500" />
-                        <span>Hiring Analytics</span>
-                      </Link>
-                    </>
-                  ) : (
-                    <>
-                      <Link
-                        to="/jobs/dashboard"
-                        className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                          pathname === '/jobs/dashboard'
-                            ? 'bg-blue-50 text-blue-800'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                        }`}
-                      >
-                        <LayoutDashboard className="w-4 h-4 mr-2.5 text-blue-500" />
-                        <span>Candidate Hub</span>
-                      </Link>
-                      <Link
-                        to="/jobs/my-jobs"
-                        className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                          pathname === '/jobs/my-jobs'
-                            ? 'bg-blue-50 text-blue-800'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                        }`}
-                      >
-                        <Briefcase className="w-4 h-4 mr-2.5 text-blue-500" />
-                        <span>My Applications</span>
-                      </Link>
-                    </>
-                  )}
-
-                  <Link
-                    to="/jobs/calendar"
-                    className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                      pathname === '/jobs/calendar'
-                        ? 'bg-blue-50 text-blue-800'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                    }`}
-                  >
-                    <Calendar className="w-4 h-4 mr-2.5 text-blue-500" />
-                    <span>Interview Calendar</span>
-                  </Link>
-
-                  <Link
-                    to="/jobs/resume-scorer"
-                    className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                      pathname === '/jobs/resume-scorer'
-                        ? 'bg-blue-50 text-blue-800'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                    }`}
-                  >
-                    <Sparkles className="w-4 h-4 mr-2.5 text-indigo-500" />
-                    <span>AI Resume Scorer</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {/* SECTION 3: Management & Approvals */}
-            {canAccessManagement && (
-              <div className="space-y-1">
-                <button
-                  onClick={() => setManagementOpen(!managementOpen)}
-                  className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider hover:text-slate-700 cursor-pointer"
-                >
-                  <div className="flex items-center space-x-2">
-                    <Users className="w-4 h-4 text-emerald-600" />
-                    <span>Management</span>
-                  </div>
-                  {managementOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                </button>
-
-                {managementOpen && (
-                  <div className="space-y-1 pl-2 pt-1 border-l-2 border-emerald-100 ml-3">
-                    <Link
-                      to="/admin/employer-approvals"
-                      className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                        pathname === '/admin/employer-approvals'
-                          ? 'bg-emerald-50 text-emerald-800'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                      }`}
-                    >
-                      <CheckCircle2 className="w-4 h-4 mr-2.5 text-emerald-500" />
-                      <span>Employer Approvals</span>
-                    </Link>
-                    <Link
-                      to="/admin/users"
-                      className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                        pathname === '/admin/users'
-                          ? 'bg-emerald-50 text-emerald-800'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                      }`}
-                    >
-                      <Users className="w-4 h-4 mr-2.5 text-emerald-500" />
-                      <span>User Moderation</span>
-                    </Link>
-                    <Link
-                      to="/admin/jobs"
-                      className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                        pathname === '/admin/jobs'
-                          ? 'bg-emerald-50 text-emerald-800'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                      }`}
-                    >
-                      <Briefcase className="w-4 h-4 mr-2.5 text-emerald-500" />
-                      <span>Job Moderation</span>
-                    </Link>
-                    <Link
-                      to="/admin/resumes"
-                      className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                        pathname === '/admin/resumes'
-                          ? 'bg-emerald-50 text-emerald-800'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                      }`}
-                    >
-                      <FileText className="w-4 h-4 mr-2.5 text-emerald-500" />
-                      <span>Resume Database</span>
-                    </Link>
-                  </div>
-                )}
               </div>
-            )}
-
-            {/* SECTION 4: Platform Administration (Admin Only) */}
-            {isAdmin && (
-              <div className="space-y-1">
-                <button
-                  onClick={() => setAdminOpen(!adminOpen)}
-                  className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider hover:text-slate-700 cursor-pointer"
-                >
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="w-4 h-4 text-rose-600" />
-                    <span>Administration</span>
-                  </div>
-                  {adminOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                </button>
-
-                {adminOpen && (
-                  <div className="space-y-1 pl-2 pt-1 border-l-2 border-rose-100 ml-3">
-                    <Link
-                      to="/admin/dashboard"
-                      className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                        pathname === '/admin/dashboard'
-                          ? 'bg-rose-50 text-rose-800'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                      }`}
-                    >
-                      <ShieldCheck className="w-4 h-4 mr-2.5 text-rose-500" />
-                      <span>Admin Overview</span>
-                    </Link>
-                    <Link
-                      to="/admin/admins"
-                      className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                        pathname === '/admin/admins'
-                          ? 'bg-rose-50 text-rose-800'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                      }`}
-                    >
-                      <ShieldCheck className="w-4 h-4 mr-2.5 text-rose-500" />
-                      <span>Admin Privileges</span>
-                    </Link>
-                    <Link
-                      to="/admin/send-email"
-                      className={`flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                        pathname === '/admin/send-email'
-                          ? 'bg-rose-50 text-rose-800'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                      }`}
-                    >
-                      <Mail className="w-4 h-4 mr-2.5 text-rose-500" />
-                      <span>Broadcast Email</span>
-                    </Link>
-                  </div>
-                )}
-              </div>
-            )}
+            ))}
           </div>
 
           {/* Sidebar Footer */}
           <div className="pt-4 border-t border-slate-200 mt-4 space-y-1">
             <Link
               to={isEmployer ? "/jobs/poster-profile" : "/jobs/profile"}
-              className="flex items-center px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+              className="flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
             >
-              <User className="w-4 h-4 mr-2.5 text-slate-400" />
+              <User className="w-4 h-4 mr-3 text-slate-400" />
               <span>My Profile</span>
             </Link>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center px-3 py-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+              className="w-full flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
             >
-              <LogOut className="w-4 h-4 mr-2.5" />
+              <LogOut className="w-4 h-4 mr-3" />
               <span>Sign Out</span>
             </button>
           </div>
@@ -621,137 +316,28 @@ export default function AppLayout() {
                   </button>
                 </div>
 
-                <div className="space-y-4">
-                  <Link
-                    to="/dashboard"
-                    onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center px-3 py-2 rounded-xl text-sm font-bold ${
-                      pathname === '/dashboard' || pathname === '/'
-                        ? 'bg-blue-600 text-white'
-                        : 'text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    <LayoutDashboard className="w-5 h-5 mr-3" /> Dashboard
-                  </Link>
-
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider px-3">Candidate Intelligence</p>
-                    <Link
-                      to="/iq/advanced-filter"
-                      onClick={() => setSidebarOpen(false)}
-                      className="flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-purple-50"
-                    >
-                      Candidate Search
-                    </Link>
-                    <Link
-                      to="/iq/reports"
-                      onClick={() => setSidebarOpen(false)}
-                      className="flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-purple-50"
-                    >
-                      Activity Reports
-                    </Link>
-                    <Link
-                      to="/iq/upload"
-                      onClick={() => setSidebarOpen(false)}
-                      className="flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-purple-50"
-                    >
-                      Upload Data
-                    </Link>
-                    {isAdmin && (
-                      <Link
-                        to="/iq/manage-users"
-                        onClick={() => setSidebarOpen(false)}
-                        className="flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-purple-50"
-                      >
-                        Manage IQ Users
-                      </Link>
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider px-3">Recruitment</p>
-                    <Link
-                      to="/jobs/jobs"
-                      onClick={() => setSidebarOpen(false)}
-                      className="flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-blue-50"
-                    >
-                      <Search className="w-4 h-4 mr-2.5 text-blue-500" /> Job Board
-                    </Link>
-                    {canAccessEmployerTools ? (
-                      <>
-                        <Link
-                          to="/jobs/posting-job"
-                          onClick={() => setSidebarOpen(false)}
-                          className="flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-blue-50"
-                        >
-                          <PlusCircle className="w-4 h-4 mr-2.5 text-blue-500" /> Post a Job
-                        </Link>
-                        <Link
-                          to="/jobs/applicants"
-                          onClick={() => setSidebarOpen(false)}
-                          className="flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-blue-50"
-                        >
-                          <Users className="w-4 h-4 mr-2.5 text-blue-500" /> Applicants
-                        </Link>
-                        <Link
-                          to="/jobs/find-candidate"
-                          onClick={() => setSidebarOpen(false)}
-                          className="flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-blue-50"
-                        >
-                          <Search className="w-4 h-4 mr-2.5 text-blue-500" /> Find Talent
-                        </Link>
-                      </>
-                    ) : (
-                      <Link
-                        to="/jobs/my-jobs"
-                        onClick={() => setSidebarOpen(false)}
-                        className="flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-blue-50"
-                      >
-                        <Briefcase className="w-4 h-4 mr-2.5 text-blue-500" /> My Applications
-                      </Link>
-                    )}
-                    <Link
-                      to="/jobs/calendar"
-                      onClick={() => setSidebarOpen(false)}
-                      className="flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-blue-50"
-                    >
-                      <Calendar className="w-4 h-4 mr-2.5 text-blue-500" /> Calendar
-                    </Link>
-                    <Link
-                      to="/jobs/resume-scorer"
-                      onClick={() => setSidebarOpen(false)}
-                      className="flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-blue-50"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2.5 text-indigo-500" /> AI Resume Scorer
-                    </Link>
-                  </div>
-
-                  {isAdmin && (
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider px-3">Administration</p>
-                      <Link
-                        to="/admin/dashboard"
-                        onClick={() => setSidebarOpen(false)}
-                        className="flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-rose-50"
-                      >
-                        <ShieldCheck className="w-4 h-4 mr-2.5 text-rose-500" /> Admin Center
-                      </Link>
-                      <Link
-                        to="/admin/employer-approvals"
-                        onClick={() => setSidebarOpen(false)}
-                        className="flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-emerald-50"
-                      >
-                        <CheckCircle2 className="w-4 h-4 mr-2.5 text-emerald-500" /> Approvals
-                      </Link>
-                      <Link
-                        to="/admin/users"
-                        onClick={() => setSidebarOpen(false)}
-                        className="flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-emerald-50"
-                      >
-                        <Users className="w-4 h-4 mr-2.5 text-emerald-500" /> Users
-                      </Link>
+                {/* Mobile Dynamic Nav Groups */}
+                <div className="space-y-6">
+                  {navGroups.map((group, groupIdx) => (
+                    <div key={groupIdx} className="space-y-2">
+                      <p className="px-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        {group.group}
+                      </p>
+                      <div className="space-y-1">
+                        {group.items.map((item, itemIdx) => (
+                          <Link
+                            key={itemIdx}
+                            to={item.path}
+                            onClick={() => setSidebarOpen(false)}
+                            className="flex items-center px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-blue-50"
+                          >
+                            {renderIcon(item.icon, "w-4 h-4 mr-2.5 text-blue-500")}
+                            <span>{item.label}</span>
+                          </Link>
+                        ))}
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
 

@@ -20,6 +20,9 @@ import {
   X,
   Clock,
   CheckCircle,
+  GripVertical,
+  PauseCircle,
+  Ban,
 } from "lucide-react";
 import { getApiBaseUrl } from "../utils/apiConfig";
 
@@ -29,6 +32,12 @@ const API_BASE_URL = getApiBaseUrl();
 const ActiveJobs = () => {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
+  const [draggedJobId, setDraggedJobId] = useState(null);
+  const [isOverDeleteZone, setIsOverDeleteZone] = useState(false);
+  const [isOverStopZone, setIsOverStopZone] = useState(false);
+  const [pausedJobIds, setPausedJobIds] = useState(new Set());
+  const [actionNotification, setActionNotification] = useState("");
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
@@ -252,6 +261,12 @@ const ActiveJobs = () => {
                 {error}
               </div>
             )}
+            {actionNotification && (
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-semibold flex items-center space-x-2 animate-in fade-in">
+                <CheckCircle className="w-5 h-5 text-emerald-600" />
+                <span>{actionNotification}</span>
+              </div>
+            )}
             {jobs.length === 0 ? (
               <div className="text-center py-12">
                 <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -263,69 +278,183 @@ const ActiveJobs = () => {
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {jobs.map((job) => (
-                  <div
-                    key={job.id}
-                    className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm"
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-700 mb-2">
-                          {job.job_title}
-                        </h3>
-                        <div className="flex items-center space-x-4 text-gray-600 mb-2">
-                          <div className="flex items-center space-x-1">
-                            <Building2 className="w-4 h-4" />
-                            <span>{job.company_name}</span>
+              <>
+                <div className="space-y-6">
+                  {jobs.map((job) => {
+                    const isBeingDragged = draggedJobId === job.id;
+                    const isPaused = pausedJobIds.has(job.id);
+                    return (
+                      <div
+                        key={job.id}
+                        draggable="true"
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData("text/plain", job.id);
+                          setDraggedJobId(job.id);
+                        }}
+                        onDragEnd={() => setDraggedJobId(null)}
+                        className={`bg-white rounded-xl border p-6 transition-all cursor-grab active:cursor-grabbing hover:shadow-md ${
+                          isBeingDragged
+                            ? "opacity-40 scale-95 border-dashed border-red-400 bg-red-50/20"
+                            : isPaused
+                            ? "border-amber-300 bg-amber-50/20"
+                            : "border-gray-200"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center mr-3 text-gray-300 hover:text-gray-600 transition-colors">
+                            <GripVertical className="w-5 h-5 cursor-grab" title="Drag card to action dropzones below" />
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="w-4 h-4" />
-                            <span>{job.job_location}</span>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h3 className="text-xl font-bold text-gray-700">
+                                {job.job_title}
+                              </h3>
+                              {isPaused && (
+                                <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded-full text-xs font-bold flex items-center space-x-1">
+                                  <PauseCircle className="w-3.5 h-3.5 mr-1" /> Applications Paused
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-4 text-gray-600 mb-2">
+                              <div className="flex items-center space-x-1">
+                                <Building2 className="w-4 h-4" />
+                                <span>{job.company_name}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <MapPin className="w-4 h-4" />
+                                <span>{job.job_location}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2 mb-2">
+                              {job.job_type.map((type) => (
+                                <span
+                                  key={type}
+                                  className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+                                >
+                                  {type}
+                                </span>
+                              ))}
+                              <span className="px-2 py-1 bg-green-50 text-green-700 rounded-full text-sm">
+                                ₹{job.pay_min} - ₹{job.pay_max}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-sm text-gray-600">
+                              <Clock className="w-4 h-4" />
+                              <span>
+                                Posted{" "}
+                                {new Date(job.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-2 mb-2">
-                          {job.job_type.map((type) => (
-                            <span
-                              key={type}
-                              className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleEdit(job)}
+                              className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
+                              title="Edit Job"
                             >
-                              {type}
-                            </span>
-                          ))}
-                          <span className="px-2 py-1 bg-green-50 text-green-700 rounded-full text-sm">
-                            ₹{job.pay_min} - ₹{job.pay_max}
-                          </span>
+                              <Edit3 className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(job.id)}
+                              className="p-2 text-red-600 hover:text-red-800 transition-colors"
+                              title="Delete Job"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2 text-sm text-gray-600">
-                          <Clock className="w-4 h-4" />
-                          <span>
-                            Posted{" "}
-                            {new Date(job.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
+                        <p className="text-gray-600 mb-4">
+                          {job.job_description.substring(0, 150)}...
+                        </p>
                       </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleEdit(job)}
-                          className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
-                        >
-                          <Edit3 className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(job.id)}
-                          className="p-2 text-red-600 hover:text-red-800 transition-colors"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Dual Interactive Action Dropzones */}
+                <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* 1. Delete Job Drop Zone */}
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsOverDeleteZone(true);
+                    }}
+                    onDragLeave={() => setIsOverDeleteZone(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const jobId = e.dataTransfer.getData("text/plain") || draggedJobId;
+                      if (jobId) {
+                        handleDelete(jobId);
+                      }
+                      setIsOverDeleteZone(false);
+                      setDraggedJobId(null);
+                    }}
+                    className={`p-6 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center cursor-pointer ${
+                      isOverDeleteZone
+                        ? "bg-red-50 border-red-500 text-red-700 scale-102 shadow-lg animate-pulse"
+                        : draggedJobId
+                        ? "bg-red-50/60 border-red-300 text-red-700 shadow-sm animate-bounce"
+                        : "bg-white border-slate-300 text-slate-500 hover:border-red-300"
+                    }`}
+                  >
+                    <div className={`p-3.5 rounded-2xl mb-2 transition-transform ${isOverDeleteZone ? "bg-red-100 text-red-600 scale-110" : "bg-red-50 text-red-500"}`}>
+                      <Trash2 className="w-6 h-6" />
                     </div>
-                    <p className="text-gray-600 mb-4">
-                      {job.job_description.substring(0, 150)}...
+                    <p className="font-bold text-sm">
+                      {isOverDeleteZone ? "Release mouse to delete job!" : "Drop Job Card Here to Delete"}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {draggedJobId ? "Release mouse to confirm job deletion" : "Drag any job card above and drop here to delete"}
                     </p>
                   </div>
-                ))}
-              </div>
+
+                  {/* 2. Stop Applications Drop Zone */}
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsOverStopZone(true);
+                    }}
+                    onDragLeave={() => setIsOverStopZone(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const jobId = e.dataTransfer.getData("text/plain") || draggedJobId;
+                      if (jobId) {
+                        setPausedJobIds((prev) => {
+                          const updated = new Set(prev);
+                          if (updated.has(jobId)) {
+                            updated.delete(jobId);
+                            setActionNotification("Applications resumed for job!");
+                          } else {
+                            updated.add(jobId);
+                            setActionNotification("Applications stopped/paused for job!");
+                          }
+                          return updated;
+                        });
+                        setTimeout(() => setActionNotification(""), 3500);
+                      }
+                      setIsOverStopZone(false);
+                      setDraggedJobId(null);
+                    }}
+                    className={`p-6 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center cursor-pointer ${
+                      isOverStopZone
+                        ? "bg-amber-50 border-amber-500 text-amber-800 scale-102 shadow-lg animate-pulse"
+                        : draggedJobId
+                        ? "bg-amber-50/60 border-amber-300 text-amber-800 shadow-sm animate-bounce"
+                        : "bg-white border-slate-300 text-slate-500 hover:border-amber-300"
+                    }`}
+                  >
+                    <div className={`p-3.5 rounded-2xl mb-2 transition-transform ${isOverStopZone ? "bg-amber-100 text-amber-700 scale-110" : "bg-amber-50 text-amber-600"}`}>
+                      <PauseCircle className="w-6 h-6" />
+                    </div>
+                    <p className="font-bold text-sm">
+                      {isOverStopZone ? "Release mouse to pause applications!" : "Drop Job Card Here to Pause Applications"}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {draggedJobId ? "Release mouse to toggle application pause state" : "Drag any job card above and drop here to stop/pause applications"}
+                    </p>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>

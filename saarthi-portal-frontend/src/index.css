@@ -5,6 +5,11 @@
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.dark {
+  color-scheme: dark;
 }
 
 *,
@@ -17,8 +22,14 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #f9fafb;
-  color: #111827;
+  background-color: #f8fafc;
+  color: #0f172a;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.dark body {
+  background-color: #0b0f19 !important;
+  color: #e2e8f0 !important;
 }
 
 #root {
@@ -26,3 +37,294 @@ body {
   width: 100%;
 }
 
+/* =========================================================
+   DARK MODE – COMPREHENSIVE GLOBAL STYLES & OVERRIDES
+   Ensures 100% dark theme across all modules, headers,
+   gradients, profile builder, resume boxes, and headboxes.
+   ========================================================= */
+
+/* --- 1. Reset Gradients that create white/light backgrounds --- */
+html.dark [class*="from-blue-50"],
+html.dark [class*="via-white"],
+html.dark [class*="to-white"],
+html.dark [class*="to-purple-50"],
+html.dark [class*="to-indigo-50"],
+html.dark [class*="from-slate-50"],
+html.dark [class*="from-gray-50"] {
+  background-image: linear-gradient(135deg, #0e1526 0%, #151d30 100%) !important;
+  background-color: #0e1526 !important;
+}
+
+/* Input gradient resets */
+html.dark input[class*="bg-gradient-"],
+html.dark select[class*="bg-gradient-"],
+html.dark textarea[class*="bg-gradient-"] {
+  background-image: none !important;
+  background-color: #1a2538 !important;
+  color: #f1f5f9 !important;
+}
+
+/* --- 2. Surface Backgrounds --- */
+html.dark #root,
+html.dark main,
+html.dark .min-h-screen,
+html.dark section,
+html.dark article {
+  background-color: #0b0f19 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Cards & Content Panels */
+html.dark [class*="bg-white"],
+html.dark [class*="bg-slate-50"],
+html.dark [class*="bg-gray-50"],
+html.dark [class*="bg-neutral-50"],
+html.dark [class*="bg-zinc-50"] {
+  background-color: #151d30 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Secondary / nested surfaces */
+html.dark [class*="bg-slate-100"],
+html.dark [class*="bg-gray-100"],
+html.dark [class*="bg-neutral-100"] {
+  background-color: #1e2b42 !important;
+}
+
+html.dark [class*="bg-slate-200"],
+html.dark [class*="bg-gray-200"] {
+  background-color: #26354d !important;
+}
+
+/* Header & Sidebar */
+html.dark header,
+html.dark aside,
+html.dark [class*="sidebar"] {
+  background-color: #0e1526 !important;
+  border-color: #202c44 !important;
+}
+
+/* Sticky sub-navigation bars */
+html.dark [class*="sticky"] {
+  background-color: #0e1526 !important;
+  border-color: #202c44 !important;
+}
+
+/* --- 3. Borders & Dividers --- */
+html.dark [class*="border-slate-"],
+html.dark [class*="border-gray-"],
+html.dark [class*="border-blue-100"],
+html.dark [class*="border-blue-200"],
+html.dark [class*="border-blue-300"],
+html.dark [class*="border-indigo-100"],
+html.dark [class*="border-indigo-200"] {
+  border-color: #24324d !important;
+}
+
+html.dark [class*="divide-slate-"],
+html.dark [class*="divide-gray-"] {
+  border-color: #24324d !important;
+}
+
+/* --- 4. Typography & Text Colors --- */
+/* Headings & dark text */
+html.dark [class*="text-slate-900"],
+html.dark [class*="text-slate-800"],
+html.dark [class*="text-slate-700"],
+html.dark [class*="text-gray-900"],
+html.dark [class*="text-gray-800"],
+html.dark [class*="text-gray-700"],
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark h5,
+html.dark h6 {
+  color: #f8fafc !important;
+}
+
+/* Subheadings & body text */
+html.dark [class*="text-slate-600"],
+html.dark [class*="text-slate-500"],
+html.dark [class*="text-gray-600"],
+html.dark [class*="text-gray-500"] {
+  color: #94a3b8 !important;
+}
+
+html.dark [class*="text-slate-400"],
+html.dark [class*="text-gray-400"] {
+  color: #64748b !important;
+}
+
+/* Brand colored text highlights (e.g. Profile Builder span text-blue-800) */
+html.dark [class*="text-blue-900"],
+html.dark [class*="text-blue-800"],
+html.dark [class*="text-blue-700"],
+html.dark [class*="text-indigo-900"],
+html.dark [class*="text-indigo-800"],
+html.dark [class*="text-indigo-700"] {
+  color: #60a5fa !important;
+}
+
+html.dark [class*="text-blue-600"] {
+  color: #93c5fd !important;
+}
+
+html.dark [class*="text-purple-900"],
+html.dark [class*="text-purple-800"],
+html.dark [class*="text-purple-700"] {
+  color: #c084fc !important;
+}
+
+html.dark [class*="text-green-800"],
+html.dark [class*="text-green-700"] {
+  color: #86efac !important;
+}
+
+html.dark [class*="text-red-800"],
+html.dark [class*="text-red-700"] {
+  color: #fca5a5 !important;
+}
+
+html.dark [class*="text-amber-800"],
+html.dark [class*="text-amber-700"],
+html.dark [class*="text-yellow-800"],
+html.dark [class*="text-yellow-700"] {
+  color: #fcd34d !important;
+}
+
+/* --- 5. Form Elements (Inputs, Selects, Textareas) --- */
+html.dark input,
+html.dark input[type="text"],
+html.dark input[type="email"],
+html.dark input[type="password"],
+html.dark input[type="number"],
+html.dark input[type="search"],
+html.dark input[type="tel"],
+html.dark input[type="url"],
+html.dark input[type="date"],
+html.dark select,
+html.dark textarea {
+  background-color: #1a2538 !important;
+  color: #f8fafc !important;
+  border-color: #2b3b55 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #5d7191 !important;
+}
+
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+  border-color: #3b82f6 !important;
+  outline-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+}
+
+/* File input text */
+html.dark input[type="file"]::file-selector-button {
+  background-color: #1e293b !important;
+  color: #93c5fd !important;
+  border: 1px solid #334155 !important;
+}
+
+/* --- 6. Dropdowns, Modals, Popovers, Resume Preview Box --- */
+html.dark [class*="dropdown"],
+html.dark [role="listbox"],
+html.dark [role="menu"],
+html.dark [role="dialog"],
+html.dark [class*="modal"],
+html.dark [class*="dialog"],
+html.dark .fixed.inset-0 > div.bg-white,
+html.dark [class*="rounded-xl"].bg-white,
+html.dark [class*="rounded-2xl"].bg-white,
+html.dark [class*="rounded-lg"].bg-white,
+html.dark [class*="rounded-3xl"].bg-white {
+  background-color: #151d30 !important;
+  border-color: #24324d !important;
+}
+
+/* Empty state / resume upload dashed boxes */
+html.dark [class*="border-dashed"] {
+  border-color: #334668 !important;
+  background-color: #121929 !important;
+}
+
+/* --- 7. Tables --- */
+html.dark table {
+  background-color: #151d30 !important;
+}
+
+html.dark thead,
+html.dark th {
+  background-color: #0e1526 !important;
+  color: #94a3b8 !important;
+  border-color: #24324d !important;
+}
+
+html.dark td {
+  color: #e2e8f0 !important;
+  border-color: #24324d !important;
+}
+
+html.dark tr:hover {
+  background-color: #1a2538 !important;
+}
+
+/* --- 8. Hover States --- */
+html.dark [class*="hover:bg-slate-100"]:hover,
+html.dark [class*="hover:bg-gray-100"]:hover,
+html.dark [class*="hover:bg-slate-50"]:hover,
+html.dark [class*="hover:bg-gray-50"]:hover,
+html.dark [class*="hover:bg-blue-50"]:hover {
+  background-color: #1e2b42 !important;
+}
+
+/* --- 9. Tinted Colored Chips / Action Cards --- */
+html.dark [class*="bg-blue-50"] {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+html.dark [class*="bg-green-50"] {
+  background-color: rgba(34, 197, 94, 0.12) !important;
+}
+html.dark [class*="bg-red-50"] {
+  background-color: rgba(239, 68, 68, 0.12) !important;
+}
+html.dark [class*="bg-amber-50"],
+html.dark [class*="bg-yellow-50"] {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+}
+html.dark [class*="bg-purple-50"] {
+  background-color: rgba(168, 85, 247, 0.12) !important;
+}
+html.dark [class*="bg-indigo-50"] {
+  background-color: rgba(99, 102, 241, 0.12) !important;
+}
+html.dark [class*="bg-orange-50"] {
+  background-color: rgba(249, 115, 22, 0.12) !important;
+}
+html.dark [class*="bg-pink-50"] {
+  background-color: rgba(236, 72, 153, 0.12) !important;
+}
+html.dark [class*="bg-emerald-50"],
+html.dark [class*="bg-teal-50"] {
+  background-color: rgba(20, 184, 166, 0.12) !important;
+}
+
+/* --- 10. Scrollbar --- */
+html.dark ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: #0b0f19;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #2b3b55;
+  border-radius: 4px;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #3c5174;
+}

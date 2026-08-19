@@ -18,6 +18,7 @@ import {
   Edit,
   Trash2,
   Download,
+  GripVertical,
 } from "lucide-react";
 import { getUserSpecificData, setUserSpecificData } from "../utils/tokenUtils";
 import { getApiBaseUrl } from "../utils/apiConfig";
@@ -29,6 +30,8 @@ const MyJobs = () => {
   const [activeTab, setActiveTab] = useState("status");
   const [appliedJobs, setAppliedJobs] = useState([]);
   const [savedJobsList, setSavedJobsList] = useState([]);
+  const [draggedJobId, setDraggedJobId] = useState(null);
+  const [isOverDropzone, setIsOverDropzone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedJob, setSelectedJob] = useState(null);
@@ -753,74 +756,93 @@ const MyJobs = () => {
     </div>
   );
 
-  const SavedJobCard = ({ job }) => (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <div
-          className="flex items-start space-x-4 flex-1 cursor-pointer"
-          onClick={() => handleSavedJobClick(job)}
-        >
-          <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-2xl">
-            {job.logo || "💼"}
+  const SavedJobCard = ({ job }) => {
+    const isBeingDragged = draggedJobId === job.id;
+    return (
+      <div
+        draggable="true"
+        onDragStart={(e) => {
+          e.dataTransfer.setData("text/plain", job.id);
+          setDraggedJobId(job.id);
+        }}
+        onDragEnd={() => setDraggedJobId(null)}
+        className={`bg-white rounded-xl border p-6 transition-all cursor-grab active:cursor-grabbing hover:shadow-md ${
+          isBeingDragged
+            ? "opacity-40 scale-95 border-dashed border-red-400 bg-red-50/20"
+            : "border-gray-200"
+        }`}
+      >
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center mr-3 text-gray-300 hover:text-gray-600 transition-colors">
+            <GripVertical className="w-5 h-5 cursor-grab" title="Drag card over trash bin to unsave" />
           </div>
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-700 mb-1 text-left">
-              {job.job_title || "N/A"}
-            </h3>
-            <div className="flex items-center space-x-2 text-gray-600 mb-2">
-              <Building2 className="w-4 h-4" />
-              <span className="text-sm">{job.company_name || "N/A"}</span>
+          <div
+            className="flex items-start space-x-4 flex-1 cursor-pointer"
+            onClick={() => handleSavedJobClick(job)}
+          >
+            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-2xl">
+              {job.logo || "💼"}
             </div>
-            <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
-              <div className="flex items-center space-x-1">
-                <MapPin className="w-4 h-4" />
-                <span>{job.job_location || "N/A"}</span>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-700 mb-1 text-left">
+                {job.job_title || "N/A"}
+              </h3>
+              <div className="flex items-center space-x-2 text-gray-600 mb-2">
+                <Building2 className="w-4 h-4" />
+                <span className="text-sm">{job.company_name || "N/A"}</span>
               </div>
-              <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">
-                {Array.isArray(job.job_type) && job.job_type.length > 0
-                  ? job.job_type[0]
-                  : "N/A"}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Clock className="w-4 h-4" />
-              <span>
-                Posted{" "}
-                {job.created_at
-                  ? new Date(job.created_at).toLocaleDateString()
-                  : "N/A"}
-              </span>
+              <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+                <div className="flex items-center space-x-1">
+                  <MapPin className="w-4 h-4" />
+                  <span>{job.job_location || "N/A"}</span>
+                </div>
+                <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">
+                  {Array.isArray(job.job_type) && job.job_type.length > 0
+                    ? job.job_type[0]
+                    : "N/A"}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <Clock className="w-4 h-4" />
+                <span>
+                  Posted{" "}
+                  {job.created_at
+                    ? new Date(job.created_at).toLocaleDateString()
+                    : "N/A"}
+                </span>
+              </div>
             </div>
           </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRemoveSavedJob(job.id);
+            }}
+            className="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+            title="Unsave job"
+          >
+            <Bookmark className="w-5 h-5 fill-current" />
+          </button>
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleRemoveSavedJob(job.id);
-          }}
-          className="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-        >
-          <Bookmark className="w-5 h-5 fill-current" />
-        </button>
-      </div>
 
-      <div className="flex justify-end">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleApply(job);
-          }}
-          disabled={isPrefilling}
-          className={`px-4 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-900 transition-colors text-sm flex items-center space-x-1 ${
-            isPrefilling ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-        >
-          <Send className="w-4 h-4" />
-          <span>{isPrefilling ? "Preparing..." : "Apply Now"}</span>
-        </button>
+        <div className="flex justify-end">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleApply(job);
+            }}
+            disabled={isPrefilling}
+            className={`px-4 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-900 transition-colors text-sm flex items-center space-x-1 ${
+              isPrefilling ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+          >
+            <Send className="w-4 h-4" />
+            <span>{isPrefilling ? "Preparing..." : "Apply Now"}</span>
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const StatusCard = ({ application }) => (
     <div
@@ -950,17 +972,59 @@ const MyJobs = () => {
             {activeTab === "saved" && (
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-700">
-                    Saved Jobs
-                  </h2>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-700">
+                      Saved Jobs
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Drag job cards over the trash bin below to unsave.
+                    </p>
+                  </div>
                 </div>
 
                 {savedJobsList.length > 0 ? (
-                  <div className="space-y-4">
-                    {savedJobsList.map((job) => (
-                      <SavedJobCard key={job.id} job={job} />
-                    ))}
-                  </div>
+                  <>
+                    <div className="space-y-4">
+                      {savedJobsList.map((job) => (
+                        <SavedJobCard key={job.id} job={job} />
+                      ))}
+                    </div>
+
+                    {/* Interactive Drag & Drop Trash Zone */}
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsOverDropzone(true);
+                      }}
+                      onDragLeave={() => setIsOverDropzone(false)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const jobId = e.dataTransfer.getData("text/plain") || draggedJobId;
+                        if (jobId) {
+                          handleRemoveSavedJob(jobId);
+                        }
+                        setIsOverDropzone(false);
+                        setDraggedJobId(null);
+                      }}
+                      className={`mt-8 p-6 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center cursor-pointer ${
+                        isOverDropzone
+                          ? "bg-red-50 border-red-500 text-red-700 scale-102 shadow-lg animate-pulse"
+                          : draggedJobId
+                          ? "bg-amber-50/80 border-amber-400 text-amber-900 shadow-md animate-bounce"
+                          : "bg-slate-50/80 border-slate-300 text-slate-500 hover:border-slate-400"
+                      }`}
+                    >
+                      <div className={`p-3.5 rounded-2xl mb-2 transition-transform ${isOverDropzone ? "bg-red-100 text-red-600 scale-110" : "bg-white text-slate-500 shadow-xs"}`}>
+                        <Trash2 className="w-6 h-6" />
+                      </div>
+                      <p className="font-bold text-sm">
+                        {isOverDropzone ? "Release mouse to unsave job!" : "Drop Job Card Here to Unsave"}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        {draggedJobId ? "Release mouse to remove this job from your saved list" : "Drag any saved job card above and drop it here to remove it"}
+                      </p>
+                    </div>
+                  </>
                 ) : (
                   <div className="text-center py-12">
                     <Bookmark className="w-12 h-12 text-gray-400 mx-auto mb-4" />

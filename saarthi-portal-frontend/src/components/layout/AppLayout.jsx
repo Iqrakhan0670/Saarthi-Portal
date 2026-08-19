@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { ROLE_NAV_ITEMS, ROLE_LABELS, normalizeRole, getDefaultDashboard } from '../../config/rbac';
 import {
   LayoutDashboard,
@@ -24,7 +25,9 @@ import {
   ChevronRight,
   TrendingUp,
   Building2,
-  Clock
+  Clock,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -54,6 +57,7 @@ const renderIcon = (iconName, className = "w-4 h-4 mr-2.5 text-blue-500") => {
 
 export default function AppLayout() {
   const { user, logout, role, isAdmin, isEmployer } = useAuth();
+  const { toggleTheme, isDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -74,9 +78,9 @@ export default function AppLayout() {
   const dashboardPath = getDefaultDashboard(currentRole);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800 antialiased">
+    <div className={`min-h-screen flex flex-col font-sans antialiased ${isDark ? 'bg-[#0b0f19] text-slate-200' : 'bg-slate-50 text-slate-800'}`}>
       {/* Top Application Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
+      <header className={`border-b sticky top-0 z-40 shadow-xs ${isDark ? 'bg-[#0e1525] border-slate-700/50' : 'bg-white border-slate-200'}`}>
         <div className="max-w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           
           {/* Left: Mobile Toggle & Branding */}
@@ -172,6 +176,26 @@ export default function AppLayout() {
               <Calendar className="w-5 h-5" />
             </Link>
 
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className={`relative p-2 rounded-xl transition-all duration-300 cursor-pointer ${
+                isDark
+                  ? 'bg-slate-800 text-amber-400 hover:bg-slate-700 border border-slate-600'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+              }`}
+            >
+              <span className={`absolute inset-0 rounded-xl transition-opacity duration-300 ${
+                isDark ? 'opacity-100' : 'opacity-0'
+              } bg-amber-400/10`} />
+              {isDark ? (
+                <Sun className="w-5 h-5 relative z-10" />
+              ) : (
+                <Moon className="w-5 h-5 relative z-10" />
+              )}
+            </button>
+
             {/* User Dropdown */}
             <div className="relative">
               <button
@@ -190,7 +214,7 @@ export default function AppLayout() {
 
               {userDropdownOpen && (
                 <div 
-                  className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-1"
+                  className={`absolute right-0 mt-2 w-64 rounded-2xl shadow-xl border py-2 z-50 animate-in fade-in slide-in-from-top-1 ${isDark ? 'bg-[#161f30] border-slate-700/60 text-slate-200' : 'bg-white border-slate-200 text-slate-800'}`}
                   onClick={() => setUserDropdownOpen(false)}
                 >
                   <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
@@ -241,7 +265,7 @@ export default function AppLayout() {
       <div className="flex-1 flex max-w-full w-full mx-auto">
         
         {/* Desktop Persistent Sidebar */}
-        <aside className="hidden lg:flex flex-col w-72 border-r border-slate-200 bg-white py-6 px-4 shrink-0 min-h-[calc(100vh-4rem)]">
+        <aside className={`hidden lg:flex flex-col w-72 border-r py-6 px-4 shrink-0 min-h-[calc(100vh-4rem)] ${isDark ? 'bg-[#0e1525] border-slate-700/50' : 'bg-white border-slate-200'}`}>
           <div className="flex-1 space-y-6 overflow-y-auto pr-1">
             
             {/* Dynamic Role Navigation Groups */}
@@ -299,7 +323,7 @@ export default function AppLayout() {
               className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity" 
               onClick={() => setSidebarOpen(false)} 
             />
-            <div className="relative bg-white w-80 max-w-[85vw] h-full p-6 shadow-2xl flex flex-col justify-between z-10 overflow-y-auto">
+            <div className={`relative w-80 max-w-[85vw] h-full p-6 shadow-2xl flex flex-col justify-between z-10 overflow-y-auto ${isDark ? 'bg-[#0e1525] text-slate-200' : 'bg-white text-slate-800'}`}>
               <div className="space-y-6">
                 <div className="flex items-center justify-between pb-4 border-b border-slate-200">
                   <div className="flex items-center space-x-2">
@@ -354,7 +378,7 @@ export default function AppLayout() {
         )}
 
         {/* Main Content Viewport */}
-        <main className="flex-1 min-w-0 bg-slate-50">
+        <main className={`flex-1 min-w-0 ${isDark ? 'bg-[#0b0f19]' : 'bg-slate-50'}`}>
           <Outlet />
         </main>
       </div>

@@ -6,6 +6,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
 import UnifiedDashboard from './components/dashboard/UnifiedDashboard';
 import Login from './Login';
+import ForgotPassword from './ForgotPassword';
 
 // IQ module removed from main shell to simplify routing and avoid legacy flows
 // const IqApp = lazy(() => import('./iq/IqApp'));
@@ -28,6 +29,7 @@ function App() {
             <Routes>
               {/* Public Authentication */}
               <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
 
               {/* Unified Application Shell - All authenticated pages render inside AppLayout */}
               <Route

@@ -6,8 +6,10 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
 import UnifiedDashboard from './components/dashboard/UnifiedDashboard';
 import Login from './Login';
+import ForgotPassword from './ForgotPassword';
 
-const IqApp = lazy(() => import('./iq/IqApp'));
+// IQ module removed from main shell to simplify routing and avoid legacy flows
+// const IqApp = lazy(() => import('./iq/IqApp'));
 const JobsApp = lazy(() => import('./jobs/JobsApp'));
 const AdminApp = lazy(() => import('./admin/AdminApp'));
 
@@ -27,6 +29,7 @@ function App() {
             <Routes>
               {/* Public Authentication */}
               <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
 
               {/* Unified Application Shell - All authenticated pages render inside AppLayout */}
               <Route
@@ -40,9 +43,6 @@ function App() {
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<UnifiedDashboard />} />
                 <Route path="/home" element={<Navigate to="/dashboard" replace />} />
-
-                {/* Saarthi IQ Module */}
-                <Route path="/iq/*" element={<IqApp />} />
 
                 {/* Recruitment & Jobs Module */}
                 <Route path="/jobs/*" element={<JobsApp />} />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import {
   Users,
   Briefcase,
@@ -12,17 +13,18 @@ import {
   ArrowRight,
   PlusCircle,
   FileSpreadsheet,
-  Building2,
   ShieldCheck,
-  Clock,
-  ExternalLink,
   ChevronRight,
   FileText,
-  Mail
+  Mail,
 } from 'lucide-react';
+
+const focusRing =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2';
 
 export default function UnifiedDashboard() {
   const { user, role, defaultDashboard, isAdmin, isEmployer, isSeeker, isRecruitment, isBD, isIQAnalyst } = useAuth();
+  const { isDark } = useTheme();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -40,444 +42,358 @@ export default function UnifiedDashboard() {
   });
 
   const userName = user?.name || user?.email?.split('@')[0] || 'Team Member';
-  const userRole = user?.role?.replace('_', ' ') || 'User';
+
+  const focusRingDark = isDark ? 'focus-visible:ring-offset-zinc-950' : 'focus-visible:ring-offset-white';
+
+  // Data-driven quick actions for the hero. First item is the primary CTA;
+  // the rest render as secondary ghost buttons. Legacy /iq/advanced-filter was
+  // removed with the IQ module and now maps to the jobs-based candidate search.
+  const heroActions = [
+    { key: 'candidates', label: 'Candidate search', to: '/jobs/find-candidate', icon: Search, primary: true },
+    isEmployer || isAdmin
+      ? { key: 'post-job', label: 'Post a job', to: '/jobs/posting-job', icon: PlusCircle }
+      : { key: 'browse-jobs', label: 'Browse jobs', to: '/jobs/jobs', icon: Briefcase },
+    { key: 'calendar', label: 'Interview calendar', to: '/jobs/calendar', icon: Calendar },
+    { key: 'resume-scorer', label: 'AI resume scorer', to: '/jobs/resume-scorer', icon: Sparkles },
+  ];
+
+  // Metric cards — pure typographic hierarchy, no icon-in-a-box chip.
+  const metricCards = [
+    { key: 'candidates', label: 'Candidates in intelligence', value: stats.candidateCount, to: '/jobs/find-candidate', icon: Users, visible: true },
+    { key: 'jobs', label: 'Active job posts', value: stats.activeJobsCount, to: isEmployer || isAdmin ? '/jobs/active-jobs' : '/jobs/jobs', icon: Briefcase, visible: true },
+    { key: 'applications', label: 'Total applications', value: stats.totalApplications, to: isEmployer || isAdmin ? '/jobs/applicants' : '/jobs/my-jobs', icon: FileText, visible: true },
+    { key: 'interviews', label: 'Interviews scheduled', value: stats.scheduledInterviews, to: '/jobs/calendar', icon: Calendar, visible: true },
+    { key: 'approvals', label: 'Pending approvals', value: stats.pendingApprovals, to: '/admin/employer-approvals', icon: CheckCircle2, visible: isAdmin },
+  ];
+
+  // Candidate intelligence module — previously "Saarthi IQ", now routed to the
+  // active jobs-based candidate search & analytics after the IQ module removal.
+  const candidateIntelCards = [
+    {
+      key: 'search',
+      title: 'Advanced search',
+      desc: 'Search by skills, experience, location, and department remarks.',
+      to: '/jobs/find-candidate',
+      icon: Search,
+      cta: 'Launch search',
+    },
+    {
+      key: 'reports',
+      title: 'Activity reports',
+      desc: 'Export candidate and recruiter activity, remarks history, and click logs.',
+      to: '/jobs/view-analytics',
+      icon: FileSpreadsheet,
+      cta: 'View reports',
+    },
+    {
+      key: 'overview',
+      title: 'Pipeline overview',
+      desc: 'Department metrics across business development, recruitment, and franchise.',
+      to: '/jobs/view-analytics',
+      icon: TrendingUp,
+      cta: 'Open overview',
+    },
+  ];
+
+  const recruitmentCards = isEmployer || isAdmin
+    ? [
+        {
+          key: 'active-jobs',
+          title: 'Active job posts',
+          desc: 'Manage open positions, edit descriptions, and close filled roles.',
+          to: '/jobs/active-jobs',
+          icon: Briefcase,
+          cta: 'Manage jobs',
+        },
+        {
+          key: 'applicants',
+          title: 'Applicants pipeline',
+          desc: 'Review incoming candidates, shortlist, and trigger interview scheduling.',
+          to: '/jobs/applicants',
+          icon: Users,
+          cta: 'Review applicants',
+        },
+      ]
+    : [
+        {
+          key: 'find-jobs',
+          title: 'Explore job openings',
+          desc: 'Search verified jobs matching your skills and experience level.',
+          to: '/jobs/jobs',
+          icon: Search,
+          cta: 'Find jobs',
+        },
+        {
+          key: 'my-applications',
+          title: 'My applications',
+          desc: 'Track application progress, review statuses, and interview requests.',
+          to: '/jobs/my-jobs',
+          icon: Briefcase,
+          cta: 'Track status',
+        },
+      ];
+  recruitmentCards.push({
+    key: 'resume-scorer',
+    title: 'AI resume scorer',
+    desc: 'Calculate match score between resumes and job descriptions instantly.',
+    to: '/jobs/resume-scorer',
+    icon: Sparkles,
+    cta: 'Score resume',
+  });
+
+  const upcomingInterviews = [
+    { key: '1', role: 'Senior React Developer', meta: 'Technical round · 2:00 PM', when: 'Today' },
+    { key: '2', role: 'Product Manager', meta: 'Culture fit · 4:30 PM', when: 'Tomorrow' },
+  ];
+
+  const adminQuickLinks = [
+    { key: 'approvals', label: 'Employer approvals', badge: '4 pending', to: '/admin/employer-approvals', icon: CheckCircle2 },
+    { key: 'broadcast', label: 'Broadcast campaigns', to: '/admin/send-email', icon: Mail },
+    { key: 'users', label: 'User directory', to: '/admin/users', icon: Users },
+  ];
+
+  const surfaceCard = isDark
+    ? 'bg-zinc-900 border-zinc-800'
+    : 'bg-white border-neutral-200';
+  const surfaceCardHover = isDark ? 'hover:bg-zinc-800' : 'hover:bg-neutral-50';
+  const tileSurface = isDark
+    ? 'bg-zinc-800/60 hover:bg-zinc-800 border-zinc-700'
+    : 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200';
+  const textPrimary = isDark ? 'text-zinc-100' : 'text-neutral-900';
+  const textSecondary = isDark ? 'text-zinc-400' : 'text-neutral-500';
+  const textMuted = isDark ? 'text-zinc-500' : 'text-neutral-400';
+  const borderColor = isDark ? 'border-zinc-800' : 'border-neutral-200';
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
-      
-      {/* 1. Welcome Hero Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-900 text-white p-6 sm:p-8 lg:p-10 shadow-xl border border-white/10">
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-0 right-1/4 -mb-12 w-64 h-64 bg-purple-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
-        <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-blue-200 mb-4 border border-white/10">
-            <Sparkles className="w-3.5 h-3.5 text-blue-300" />
-            <span>Saarthi Unified Enterprise Platform</span>
+      {/* 1. Welcome Hero */}
+      <div className={`rounded-lg p-6 sm:p-8 lg:p-10 border ${isDark ? 'bg-black border-zinc-800' : 'bg-neutral-900 border-neutral-800'}`}>
+        <div className="max-w-3xl">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[11px] font-medium text-neutral-300 mb-4">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Saarthi unified enterprise platform</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white mb-3">
-            Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-indigo-200 to-white">{userName}</span>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white mb-3">
+            Welcome back, {userName}
           </h1>
 
-          <p className="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
-            Access candidate intelligence, manage job pipelines, review applications, and coordinate team operations seamlessly from your unified command center.
+          <p className="text-neutral-400 text-sm leading-relaxed mb-6">
+            Access candidate intelligence, manage job pipelines, review applications, and coordinate team
+            operations from your unified command center.
           </p>
 
-          {/* Quick Action Buttons */}
-          <div className="flex flex-wrap gap-3">
-            <Link
-              to="/iq/advanced-filter"
-              className="inline-flex items-center px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-md shadow-purple-600/30 transition-all cursor-pointer"
-            >
-              <Search className="w-4 h-4 mr-2" />
-              Search IQ Database
-            </Link>
-
-            {isEmployer || isAdmin ? (
+          <div className="flex flex-wrap gap-2.5">
+            {heroActions.map((action) => (
               <Link
-                to="/jobs/posting-job"
-                className="inline-flex items-center px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/30 transition-all cursor-pointer"
+                key={action.key}
+                to={action.to}
+                className={`inline-flex items-center px-4 py-2.5 rounded-md text-xs font-semibold transition-colors ${focusRing} focus-visible:ring-offset-neutral-900 ${
+                  action.primary
+                    ? 'bg-white text-neutral-900 hover:bg-neutral-100'
+                    : 'bg-white/5 text-white border border-white/10 hover:bg-white/10'
+                }`}
               >
-                <PlusCircle className="w-4 h-4 mr-2" />
-                Post a Job
+                <action.icon className="w-4 h-4 mr-2" />
+                {action.label}
               </Link>
-            ) : (
-              <Link
-                to="/jobs/jobs"
-                className="inline-flex items-center px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/30 transition-all cursor-pointer"
-              >
-                <Briefcase className="w-4 h-4 mr-2" />
-                Browse Jobs
-              </Link>
-            )}
-
-            <Link
-              to="/jobs/calendar"
-              className="inline-flex items-center px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold backdrop-blur-md border border-white/10 transition-all"
-            >
-              <Calendar className="w-4 h-4 mr-2" />
-              Interview Calendar
-            </Link>
-
-            <Link
-              to="/jobs/resume-scorer"
-              className="inline-flex items-center px-4 py-2.5 rounded-xl bg-indigo-600/80 hover:bg-indigo-600 text-white text-xs font-bold backdrop-blur-md transition-all"
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              AI Resume Scorer
-            </Link>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* 2. Platform Overview Metrics Row */}
+      {/* 2. Platform Overview Metrics — typographic hierarchy, no icon chips */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {/* IQ Metric */}
-        <Link
-          to="/iq/advanced-filter"
-          className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:shadow-md hover:border-purple-200 transition-all group"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <Users className="w-5 h-5" />
-            </div>
-            <span className="text-[11px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">IQ Intel</span>
-          </div>
-          <p className="text-2xl font-extrabold text-slate-900 leading-none">{stats.candidateCount}</p>
-          <p className="text-xs font-semibold text-slate-500 mt-1">Candidates in IQ</p>
-        </Link>
-
-        {/* Active Jobs Metric */}
-        <Link
-          to={isEmployer || isAdmin ? "/jobs/active-jobs" : "/jobs/jobs"}
-          className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:shadow-md hover:border-blue-200 transition-all group"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <Briefcase className="w-5 h-5" />
-            </div>
-            <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Jobs</span>
-          </div>
-          <p className="text-2xl font-extrabold text-slate-900 leading-none">{stats.activeJobsCount}</p>
-          <p className="text-xs font-semibold text-slate-500 mt-1">Active Job Posts</p>
-        </Link>
-
-        {/* Applications Metric */}
-        <Link
-          to={isEmployer || isAdmin ? "/jobs/applicants" : "/jobs/my-jobs"}
-          className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:shadow-md hover:border-indigo-200 transition-all group"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <FileText className="w-5 h-5" />
-            </div>
-            <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Pipeline</span>
-          </div>
-          <p className="text-2xl font-extrabold text-slate-900 leading-none">{stats.totalApplications}</p>
-          <p className="text-xs font-semibold text-slate-500 mt-1">Total Applications</p>
-        </Link>
-
-        {/* Calendar Metric */}
-        <Link
-          to="/jobs/calendar"
-          className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:shadow-md hover:border-emerald-200 transition-all group"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Interviews</span>
-          </div>
-          <p className="text-2xl font-extrabold text-slate-900 leading-none">{stats.scheduledInterviews}</p>
-          <p className="text-xs font-semibold text-slate-500 mt-1">Interviews Scheduled</p>
-        </Link>
-
-        {/* Admin Approvals Metric */}
-        {isAdmin && (
-          <Link
-            to="/admin/employer-approvals"
-            className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:shadow-md hover:border-rose-200 transition-all group col-span-2 md:col-span-4 lg:col-span-1"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <CheckCircle2 className="w-5 h-5" />
+        {metricCards
+          .filter((card) => card.visible)
+          .map((card) => (
+            <Link
+              key={card.key}
+              to={card.to}
+              className={`p-5 rounded-lg border transition-colors ${surfaceCard} ${surfaceCardHover} ${focusRing} ${focusRingDark}`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <p className={`text-[11px] font-medium uppercase tracking-wide ${textMuted}`}>{card.label}</p>
+                <card.icon className={`w-3.5 h-3.5 ${textMuted}`} />
               </div>
-              <span className="text-[11px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">Admin</span>
-            </div>
-            <p className="text-2xl font-extrabold text-slate-900 leading-none">{stats.pendingApprovals}</p>
-            <p className="text-xs font-semibold text-slate-500 mt-1">Pending Approvals</p>
-          </Link>
-        )}
+              <p className={`text-2xl font-semibold leading-none ${textPrimary}`}>{card.value}</p>
+            </Link>
+          ))}
       </div>
 
-      {/* 3. Core Functional Modules Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left 2 Cols: Saarthi IQ + Recruitment Operations */}
-        <div className="lg:col-span-2 space-y-8">
-          
-          {/* Saarthi IQ Intelligence Section */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-2xs">
+      {/* 3. Core Functional Modules */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* Left: Candidate Intelligence + Recruitment Operations */}
+        <div className="lg:col-span-2 space-y-6">
+
+          <div className={`rounded-lg border p-6 sm:p-8 ${surfaceCard}`}>
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
-                  IQ
-                </div>
-                <div>
-                  <h2 className="text-lg font-extrabold text-slate-900 leading-tight">Candidate Intelligence (Saarthi IQ)</h2>
-                  <p className="text-xs text-slate-500">Filter, evaluate, and extract candidate analytics</p>
-                </div>
+              <div>
+                <h2 className={`text-base font-semibold ${textPrimary}`}>Candidate intelligence</h2>
+                <p className={`text-xs mt-0.5 ${textSecondary}`}>Filter, evaluate, and extract candidate analytics</p>
               </div>
               <Link
-                to="/iq/dashboard"
-                className="text-xs font-bold text-purple-600 hover:text-purple-700 inline-flex items-center"
+                to="/jobs/find-candidate"
+                className={`text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 inline-flex items-center rounded-sm ${focusRing} ${focusRingDark}`}
               >
-                Open IQ <ChevronRight className="w-4 h-4 ml-0.5" />
+                Open <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
               </Link>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Link
-                to="/iq/advanced-filter"
-                className="p-4 rounded-2xl bg-purple-50/60 hover:bg-purple-50 border border-purple-100 transition-colors flex flex-col justify-between group"
-              >
-                <div>
-                  <div className="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center mb-3">
-                    <Search className="w-4 h-4" />
+              {candidateIntelCards.map((card) => (
+                <Link
+                  key={card.key}
+                  to={card.to}
+                  className={`p-4 rounded-md border transition-colors flex flex-col justify-between ${tileSurface} ${focusRing} ${focusRingDark}`}
+                >
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <card.icon className={`w-4 h-4 ${textSecondary}`} />
+                      <h3 className={`text-sm font-medium ${textPrimary}`}>{card.title}</h3>
+                    </div>
+                    <p className={`text-xs leading-relaxed ${textSecondary}`}>{card.desc}</p>
                   </div>
-                  <h3 className="text-sm font-bold text-slate-900 mb-1">Advanced Search</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">Search by skills, experience, location, and department remarks.</p>
-                </div>
-                <span className="text-xs font-bold text-purple-700 mt-4 inline-flex items-center group-hover:translate-x-1 transition-transform">
-                  Launch Search <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                </span>
-              </Link>
-
-              <Link
-                to="/iq/reports"
-                className="p-4 rounded-2xl bg-purple-50/60 hover:bg-purple-50 border border-purple-100 transition-colors flex flex-col justify-between group"
-              >
-                <div>
-                  <div className="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center mb-3">
-                    <FileSpreadsheet className="w-4 h-4" />
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-900 mb-1">Activity Reports</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">Export PDF/Excel updates, remarks history, and recruiter click logs.</p>
-                </div>
-                <span className="text-xs font-bold text-purple-700 mt-4 inline-flex items-center group-hover:translate-x-1 transition-transform">
-                  View Reports <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                </span>
-              </Link>
-
-              <Link
-                to="/iq/dashboard"
-                className="p-4 rounded-2xl bg-purple-50/60 hover:bg-purple-50 border border-purple-100 transition-colors flex flex-col justify-between group"
-              >
-                <div>
-                  <div className="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center mb-3">
-                    <TrendingUp className="w-4 h-4" />
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-900 mb-1">IQ Overview</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">Department metrics across Business Development, Recruitment, and Franchise.</p>
-                </div>
-                <span className="text-xs font-bold text-purple-700 mt-4 inline-flex items-center group-hover:translate-x-1 transition-transform">
-                  Open Overview <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                </span>
-              </Link>
+                  <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mt-4 inline-flex items-center">
+                    {card.cta} <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  </span>
+                </Link>
+              ))}
             </div>
           </div>
 
-          {/* Recruitment Operations Section */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-2xs">
+          <div className={`rounded-lg border p-6 sm:p-8 ${surfaceCard}`}>
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
-                  <Briefcase className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-extrabold text-slate-900 leading-tight">Recruitment & Job Operations</h2>
-                  <p className="text-xs text-slate-500">Pipeline management, postings, and applicant tracking</p>
-                </div>
+              <div>
+                <h2 className={`text-base font-semibold ${textPrimary}`}>Recruitment & job operations</h2>
+                <p className={`text-xs mt-0.5 ${textSecondary}`}>Pipeline management, postings, and applicant tracking</p>
               </div>
               <Link
-                to={isEmployer ? "/jobs/poster-dashboard" : "/jobs/jobs"}
-                className="text-xs font-bold text-blue-600 hover:text-blue-700 inline-flex items-center"
+                to={isEmployer ? '/jobs/poster-dashboard' : '/jobs/jobs'}
+                className={`text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 inline-flex items-center rounded-sm ${focusRing} ${focusRingDark}`}
               >
-                Explore <ChevronRight className="w-4 h-4 ml-0.5" />
+                Explore <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
               </Link>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {isEmployer || isAdmin ? (
-                <>
-                  <Link
-                    to="/jobs/active-jobs"
-                    className="p-4 rounded-2xl bg-blue-50/60 hover:bg-blue-50 border border-blue-100 transition-colors flex flex-col justify-between group"
-                  >
-                    <div>
-                      <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center mb-3">
-                        <Briefcase className="w-4 h-4" />
-                      </div>
-                      <h3 className="text-sm font-bold text-slate-900 mb-1">Active Job Posts</h3>
-                      <p className="text-xs text-slate-500 leading-relaxed">Manage open positions, edit descriptions, and close filled roles.</p>
+              {recruitmentCards.map((card) => (
+                <Link
+                  key={card.key}
+                  to={card.to}
+                  className={`p-4 rounded-md border transition-colors flex flex-col justify-between ${tileSurface} ${focusRing} ${focusRingDark}`}
+                >
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <card.icon className={`w-4 h-4 ${textSecondary}`} />
+                      <h3 className={`text-sm font-medium ${textPrimary}`}>{card.title}</h3>
                     </div>
-                    <span className="text-xs font-bold text-blue-700 mt-4 inline-flex items-center group-hover:translate-x-1 transition-transform">
-                      Manage Jobs <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                    </span>
-                  </Link>
-
-                  <Link
-                    to="/jobs/applicants"
-                    className="p-4 rounded-2xl bg-blue-50/60 hover:bg-blue-50 border border-blue-100 transition-colors flex flex-col justify-between group"
-                  >
-                    <div>
-                      <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center mb-3">
-                        <Users className="w-4 h-4" />
-                      </div>
-                      <h3 className="text-sm font-bold text-slate-900 mb-1">Applicants Pipeline</h3>
-                      <p className="text-xs text-slate-500 leading-relaxed">Review incoming candidates, shortlist, and trigger interview scheduling.</p>
-                    </div>
-                    <span className="text-xs font-bold text-blue-700 mt-4 inline-flex items-center group-hover:translate-x-1 transition-transform">
-                      Review Applicants <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                    </span>
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/jobs/jobs"
-                    className="p-4 rounded-2xl bg-blue-50/60 hover:bg-blue-50 border border-blue-100 transition-colors flex flex-col justify-between group"
-                  >
-                    <div>
-                      <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center mb-3">
-                        <Search className="w-4 h-4" />
-                      </div>
-                      <h3 className="text-sm font-bold text-slate-900 mb-1">Explore Job Openings</h3>
-                      <p className="text-xs text-slate-500 leading-relaxed">Search verified jobs matching your skills and experience level.</p>
-                    </div>
-                    <span className="text-xs font-bold text-blue-700 mt-4 inline-flex items-center group-hover:translate-x-1 transition-transform">
-                      Find Jobs <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                    </span>
-                  </Link>
-
-                  <Link
-                    to="/jobs/my-jobs"
-                    className="p-4 rounded-2xl bg-blue-50/60 hover:bg-blue-50 border border-blue-100 transition-colors flex flex-col justify-between group"
-                  >
-                    <div>
-                      <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center mb-3">
-                        <Briefcase className="w-4 h-4" />
-                      </div>
-                      <h3 className="text-sm font-bold text-slate-900 mb-1">My Applications</h3>
-                      <p className="text-xs text-slate-500 leading-relaxed">Track application progress, review statuses, and interview requests.</p>
-                    </div>
-                    <span className="text-xs font-bold text-blue-700 mt-4 inline-flex items-center group-hover:translate-x-1 transition-transform">
-                      Track Status <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                    </span>
-                  </Link>
-                </>
-              )}
-
-              <Link
-                to="/jobs/resume-scorer"
-                className="p-4 rounded-2xl bg-indigo-50/60 hover:bg-indigo-50 border border-indigo-100 transition-colors flex flex-col justify-between group"
-              >
-                <div>
-                  <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3">
-                    <Sparkles className="w-4 h-4" />
+                    <p className={`text-xs leading-relaxed ${textSecondary}`}>{card.desc}</p>
                   </div>
-                  <h3 className="text-sm font-bold text-slate-900 mb-1">AI Resume Scorer</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">Calculate match score between resumes and job descriptions instantly.</p>
-                </div>
-                <span className="text-xs font-bold text-indigo-700 mt-4 inline-flex items-center group-hover:translate-x-1 transition-transform">
-                  Score Resume <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                </span>
-              </Link>
+                  <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mt-4 inline-flex items-center">
+                    {card.cta} <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  </span>
+                </Link>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Right 1 Col: Administration & Calendar Quick Panel */}
-        <div className="space-y-8">
-          
-          {/* Interview Calendar Quick Widget */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs">
+        {/* Right: Calendar + Admin Widgets */}
+        <div className="space-y-6">
+
+          <div className={`rounded-lg border p-6 ${surfaceCard}`}>
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2.5">
-                <Calendar className="w-5 h-5 text-blue-600" />
-                <h3 className="text-base font-extrabold text-slate-900">Upcoming Calendar</h3>
-              </div>
-              <Link to="/jobs/calendar" className="text-xs font-bold text-blue-600 hover:text-blue-700">
-                View All
+              <h3 className={`text-sm font-semibold ${textPrimary}`}>Upcoming calendar</h3>
+              <Link
+                to="/jobs/calendar"
+                className={`text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 rounded-sm ${focusRing} ${focusRingDark}`}
+              >
+                View all
               </Link>
             </div>
-            
-            <p className="text-xs text-slate-500 mb-4">You have {stats.scheduledInterviews} interview sessions lined up this week.</p>
-            
-            <div className="space-y-3">
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-800">Senior React Developer</p>
-                    <p className="text-[11px] text-slate-500">Technical Round • 2:00 PM</p>
-                  </div>
-                </div>
-                <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">Today</span>
-              </div>
 
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+            <p className={`text-xs mb-4 ${textSecondary}`}>
+              You have {stats.scheduledInterviews} interview sessions lined up this week.
+            </p>
+
+            <div className="space-y-2">
+              {upcomingInterviews.map((item) => (
+                <div
+                  key={item.key}
+                  className={`p-3 rounded-md border flex items-center justify-between ${
+                    isDark ? 'bg-zinc-800/60 border-zinc-700' : 'bg-neutral-50 border-neutral-200'
+                  }`}
+                >
                   <div>
-                    <p className="text-xs font-bold text-slate-800">Product Manager</p>
-                    <p className="text-[11px] text-slate-500">Culture Fit • 4:30 PM</p>
+                    <p className={`text-xs font-medium ${isDark ? 'text-zinc-200' : 'text-neutral-800'}`}>{item.role}</p>
+                    <p className={`text-[11px] mt-0.5 ${textSecondary}`}>{item.meta}</p>
                   </div>
+                  <span
+                    className={`text-[11px] font-medium px-2 py-0.5 rounded-md border ${
+                      isDark ? 'text-zinc-400 bg-zinc-900 border-zinc-700' : 'text-neutral-500 bg-white border-neutral-200'
+                    }`}
+                  >
+                    {item.when}
+                  </span>
                 </div>
-                <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">Tomorrow</span>
-              </div>
+              ))}
             </div>
 
             <Link
               to="/jobs/calendar"
-              className="mt-4 w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors flex items-center justify-center"
+              className={`mt-4 w-full py-2.5 rounded-md text-xs font-medium transition-colors flex items-center justify-center ${focusRing} ${focusRingDark} ${
+                isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200' : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
+              }`}
             >
-              Open Interactive Calendar
+              Open interactive calendar
             </Link>
           </div>
 
-          {/* Admin Tools Widget (if Admin) */}
           {isAdmin && (
-            <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs">
-              <div className="flex items-center space-x-2.5 mb-4">
-                <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                <h3 className="text-base font-extrabold text-slate-900">Admin Control Center</h3>
+            <div className={`rounded-lg border p-6 ${surfaceCard}`}>
+              <div className="flex items-center gap-2 mb-4">
+                <ShieldCheck className={`w-4 h-4 ${textSecondary}`} />
+                <h3 className={`text-sm font-semibold ${textPrimary}`}>Admin control center</h3>
               </div>
 
-              <p className="text-xs text-slate-500 mb-4">Administrative quick tools for system management</p>
+              <p className={`text-xs mb-4 ${textSecondary}`}>Administrative quick tools for system management</p>
 
-              <div className="space-y-2">
-                <Link
-                  to="/admin/employer-approvals"
-                  className="flex items-center justify-between p-3 rounded-xl hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-100 transition-colors"
-                >
-                  <div className="flex items-center space-x-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <span className="text-xs font-bold">Employer Approvals</span>
-                  </div>
-                  <span className="text-xs font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">4 Pending</span>
-                </Link>
-
-                <Link
-                  to="/admin/send-email"
-                  className="flex items-center justify-between p-3 rounded-xl hover:bg-rose-50 text-slate-700 hover:text-rose-800 border border-slate-100 transition-colors"
-                >
-                  <div className="flex items-center space-x-2.5">
-                    <Mail className="w-4 h-4 text-rose-600" />
-                    <span className="text-xs font-bold">Broadcast Campaigns</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                </Link>
-
-                <Link
-                  to="/admin/users"
-                  className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-100 text-slate-700 border border-slate-100 transition-colors"
-                >
-                  <div className="flex items-center space-x-2.5">
-                    <Users className="w-4 h-4 text-slate-600" />
-                    <span className="text-xs font-bold">User Directory</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                </Link>
+              <div className="space-y-1">
+                {adminQuickLinks.map((link) => (
+                  <Link
+                    key={link.key}
+                    to={link.to}
+                    className={`flex items-center justify-between p-3 rounded-md border transition-colors ${focusRing} ${focusRingDark} ${
+                      isDark
+                        ? 'border-zinc-800 hover:bg-zinc-800 text-zinc-300'
+                        : 'border-neutral-100 hover:bg-neutral-50 text-neutral-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <link.icon className={`w-4 h-4 ${textSecondary}`} />
+                      <span className="text-xs font-medium">{link.label}</span>
+                    </div>
+                    {link.badge ? (
+                      <span
+                        className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                          isDark ? 'bg-zinc-800 text-zinc-300' : 'bg-neutral-100 text-neutral-700'
+                        }`}
+                      >
+                        {link.badge}
+                      </span>
+                    ) : (
+                      <ChevronRight className={`w-4 h-4 ${textMuted}`} />
+                    )}
+                  </Link>
+                ))}
               </div>
             </div>
           )}
-
         </div>
-
       </div>
-
     </div>
   );
 }

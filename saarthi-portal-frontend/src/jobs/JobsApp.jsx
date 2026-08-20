@@ -59,8 +59,10 @@ export default function JobsApp() {
         <Route path="accomplishments" element={<UserAccomplishments />} />
         <Route path="applicant-messages" element={<ApplicantMessage />} />
         <Route path="poster-message" element={<PosterMessage />} />
+        {/* Canonical settings route for both seekers and posters */}
         <Route path="settings" element={<Settings />} />
-        <Route path="poster-settings" element={<Settings />} />
+        {/* Legacy poster-settings path redirected into unified settings to avoid duplication */}
+        <Route path="poster-settings" element={<Navigate to="/jobs/settings" replace />} />
         <Route path="my-jobs" element={<MyJobs />} />
         <Route path="*" element={<Navigate to="/jobs/jobs" replace />} />
       </Routes>

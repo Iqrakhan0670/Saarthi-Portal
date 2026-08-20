@@ -9,11 +9,52 @@ import {
   Eye,
   EyeOff,
   Edit,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { getApiBaseUrl } from "../utils/apiConfig";
 
 // API Configuration
 const API_BASE_URL = getApiBaseUrl();
+
+const getPasswordChecks = (password) => {
+  if (!password) {
+    return {
+      length: false,
+      upper: false,
+      lower: false,
+      number: false,
+      special: false,
+    };
+  }
+
+  return {
+    length: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[^A-Za-z0-9]/.test(password),
+  };
+};
+
+const PasswordRequirement = ({ label, met }) => {
+  return (
+    <div
+      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 border ${
+        met
+          ? "bg-green-50 border-green-200 text-green-700 shadow-sm shadow-green-100 scale-[1.02]"
+          : "bg-slate-50 border-slate-200 text-slate-500"
+      }`}
+    >
+      {met ? (
+        <CheckCircle2 className="w-4 h-4 text-green-600" />
+      ) : (
+        <AlertCircle className="w-4 h-4 text-slate-400" />
+      )}
+      <span>{label}</span>
+    </div>
+  );
+};
 
 const Settings = () => {
   // Account Settings
@@ -44,6 +85,8 @@ const Settings = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+
+  const passwordChecks = getPasswordChecks(newPassword);
 
   // Helpful token getter: check multiple common keys so component works if token stored under a different name
   const getToken = () =>
@@ -181,10 +224,15 @@ const Settings = () => {
       return setError("All password fields are required");
     if (newPassword !== confirmPassword)
       return setError("New passwords do not match");
-    if (newPassword.length < 6)
-      return setError("Password must be at least 6 characters");
     if (currentPassword === newPassword)
       return setError("New password must be different from current password");
+
+    const checks = getPasswordChecks(newPassword);
+    if (!checks.length || !checks.upper || !checks.lower || !checks.number || !checks.special) {
+      return setError(
+        "Password must be at least 8 characters and include uppercase, lowercase, number, and special character",
+      );
+    }
 
     setIsLoading(true);
     setError(null);
@@ -597,6 +645,38 @@ const Settings = () => {
                     )}
                   </button>
                 </div>
+              </div>
+            </div>
+
+            {/* Live password requirements checklist */}
+            <div className="mt-4 bg-slate-50 rounded-lg p-4 border border-slate-200">
+              <p className="text-xs font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                Password requirements
+                <span className="text-[11px] font-normal text-slate-500">
+                  (updates as you type)
+                </span>
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <PasswordRequirement
+                  label="At least 8 characters"
+                  met={passwordChecks.length}
+                />
+                <PasswordRequirement
+                  label="Contains uppercase letter"
+                  met={passwordChecks.upper}
+                />
+                <PasswordRequirement
+                  label="Contains lowercase letter"
+                  met={passwordChecks.lower}
+                />
+                <PasswordRequirement
+                  label="Contains number"
+                  met={passwordChecks.number}
+                />
+                <PasswordRequirement
+                  label="Contains special character"
+                  met={passwordChecks.special}
+                />
               </div>
             </div>
 

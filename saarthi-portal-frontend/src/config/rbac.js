@@ -47,7 +47,8 @@ export const ROLE_DASHBOARDS = {
   [ROLES.ADMIN]: '/admin/dashboard',
   [ROLES.RECRUITMENT]: '/jobs/poster-dashboard',
   [ROLES.BD]: '/jobs/poster-dashboard?view=bd',
-  [ROLES.IQ_ANALYST]: '/iq/advanced-filter',
+  // IQ Analyst now lands on unified jobs dashboard instead of legacy /iq route
+  [ROLES.IQ_ANALYST]: '/jobs/dashboard',
   [ROLES.EMPLOYER]: '/jobs/poster-dashboard',
   [ROLES.JOB_SEEKER]: '/jobs/dashboard',
 };
@@ -73,12 +74,13 @@ export const ROLE_NAV_ITEMS = {
       ],
     },
     {
-      group: 'Saarthi IQ Suite',
+      // Previously "Saarthi IQ Suite" pointing to /iq/*; now mapped to jobs/admin analytics
+      group: 'Candidate Intelligence',
       items: [
-        { label: 'Advanced Candidate Search', path: '/iq/advanced-filter', icon: 'Search' },
-        { label: 'Activity Reports', path: '/iq/reports', icon: 'FileSpreadsheet' },
-        { label: 'Data Upload Center', path: '/iq/upload', icon: 'PlusCircle' },
-        { label: 'IQ User Control', path: '/iq/manage-users', icon: 'Users' },
+        { label: 'Advanced Candidate Search', path: '/jobs/find-candidate', icon: 'Search' },
+        { label: 'Activity Reports', path: '/jobs/view-analytics', icon: 'FileSpreadsheet' },
+        { label: 'Data Upload Center', path: '/admin/resumes', icon: 'PlusCircle' },
+        { label: 'User Control', path: '/admin/users', icon: 'Users' },
       ],
     },
     {
@@ -110,8 +112,9 @@ export const ROLE_NAV_ITEMS = {
         { label: 'Saved Candidates', path: '/jobs/saved-candidates', icon: 'Bookmark' },
         { label: 'Hiring Analytics', path: '/jobs/view-analytics', icon: 'TrendingUp' },
         { label: 'Interview Calendar', path: '/jobs/calendar', icon: 'Calendar' },
-        { label: 'Candidate Search', path: '/iq/advanced-filter', icon: 'Search' },
-        { label: 'Activity Reports', path: '/iq/reports', icon: 'FileSpreadsheet' },
+        // IQ routes removed; re-point to jobs analytics/search
+        { label: 'Candidate Search', path: '/jobs/find-candidate', icon: 'Search' },
+        { label: 'Activity Reports', path: '/jobs/view-analytics', icon: 'FileSpreadsheet' },
         { label: 'AI Resume Scorer', path: '/jobs/resume-scorer', icon: 'Sparkles' },
       ],
     },
@@ -126,7 +129,8 @@ export const ROLE_NAV_ITEMS = {
         { label: 'Employer Pipeline', path: '/jobs/applicants', icon: 'Users' },
         { label: 'Follow-ups', path: '/jobs/calendar', icon: 'Clock' },
         { label: 'Opportunities', path: '/jobs/active-jobs', icon: 'Briefcase' },
-        { label: 'Activity Reports', path: '/iq/reports', icon: 'FileSpreadsheet' },
+        // IQ reports now mapped to jobs analytics
+        { label: 'Activity Reports', path: '/jobs/view-analytics', icon: 'FileSpreadsheet' },
         { label: 'BD Analytics', path: '/jobs/view-analytics', icon: 'TrendingUp' },
         { label: 'Employer Information', path: '/admin/users', icon: 'Users' },
       ],
@@ -135,14 +139,12 @@ export const ROLE_NAV_ITEMS = {
 
   [ROLES.IQ_ANALYST]: [
     {
-      group: 'Saarthi IQ Suite',
+      // IQ Analyst now focused on jobs-based candidate intelligence instead of /iq routes
+      group: 'Candidate Intelligence',
       items: [
-        { label: 'Saarthi IQ Search', path: '/iq/advanced-filter', icon: 'Search' },
-        { label: 'Candidate Search', path: '/iq/advanced-filter', icon: 'Search' },
-        { label: 'Advanced Filters', path: '/iq/advanced-filter', icon: 'Search' },
-        { label: 'Activity Reports', path: '/iq/reports', icon: 'FileSpreadsheet' },
-        { label: 'Data Upload', path: '/iq/upload', icon: 'PlusCircle' },
-        { label: 'IQ Operations', path: '/iq/manage-users', icon: 'Users' },
+        { label: 'Advanced Candidate Search', path: '/jobs/find-candidate', icon: 'Search' },
+        { label: 'Activity Reports', path: '/jobs/view-analytics', icon: 'FileSpreadsheet' },
+        { label: 'AI Resume Scorer', path: '/jobs/resume-scorer', icon: 'Sparkles' },
       ],
     },
   ],
@@ -185,10 +187,10 @@ export const ROLE_NAV_ITEMS = {
 
 // Route Prefix Permissions Map
 const ROUTE_PERMISSIONS = {
-  [ROLES.ADMIN]: ['/admin', '/iq', '/jobs', '/dashboard', '/home'],
-  [ROLES.RECRUITMENT]: ['/jobs', '/iq/advanced-filter', '/iq/reports', '/dashboard', '/home'],
-  [ROLES.BD]: ['/jobs', '/admin/employer-approvals', '/admin/users', '/iq/reports', '/dashboard', '/home'],
-  [ROLES.IQ_ANALYST]: ['/iq', '/dashboard', '/home'],
+  [ROLES.ADMIN]: ['/admin', '/jobs', '/dashboard', '/home'],
+  [ROLES.RECRUITMENT]: ['/jobs', '/dashboard', '/home'],
+  [ROLES.BD]: ['/jobs', '/admin/employer-approvals', '/admin/users', '/dashboard', '/home'],
+  [ROLES.IQ_ANALYST]: ['/jobs', '/dashboard', '/home'],
   [ROLES.EMPLOYER]: ['/jobs', '/dashboard', '/home'],
   [ROLES.JOB_SEEKER]: ['/jobs/dashboard', '/jobs/jobs', '/jobs/my-jobs', '/jobs/profile', '/jobs/resume-scorer', '/jobs/calendar', '/jobs/education', '/jobs/projects', '/jobs/internships', '/jobs/employment', '/jobs/skills', '/jobs/languages', '/jobs/accomplishments', '/jobs/settings', '/dashboard', '/home'],
 };

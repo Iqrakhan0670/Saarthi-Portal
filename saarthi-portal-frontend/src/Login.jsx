@@ -2,20 +2,74 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { ROLES, getDefaultDashboard } from './config/rbac';
-import { Lock, Mail, User as UserIcon, Eye, EyeOff, Loader2, ShieldCheck, Briefcase } from 'lucide-react';
+import {
+  Lock,
+  Mail,
+  User as UserIcon,
+  Eye,
+  EyeOff,
+  Loader2,
+  ShieldCheck,
+  Briefcase,
+  CheckCircle2,
+  AlertCircle,
+} from 'lucide-react';
+
+const getPasswordChecks = (password) => {
+  if (!password) {
+    return {
+      length: false,
+      upper: false,
+      lower: false,
+      number: false,
+      special: false,
+    };
+  }
+
+  return {
+    length: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[^A-Za-z0-9]/.test(password),
+  };
+};
+
+const PasswordRequirement = ({ label, met }) => {
+  return (
+    <div
+      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all duration-200 border ${
+        met
+          ? 'bg-green-50 border-green-200 text-green-700 shadow-sm shadow-green-100 scale-[1.02]'
+          : 'bg-slate-50 border-slate-200 text-slate-500'
+      }`}
+    >
+      {met ? (
+        <CheckCircle2 className="w-4 h-4 text-green-600" />
+      ) : (
+        <AlertCircle className="w-4 h-4 text-slate-400" />
+      )}
+      <span>{label}</span>
+    </div>
+  );
+};
 
 export default function Login() {
   const [mode, setMode] = useState('login'); // 'login' or 'signup'
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState(ROLES.JOB_SEEKER);
   const [adminSecretKey, setAdminSecretKey] = useState('');
-  
+
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
+  const passwordChecks = getPasswordChecks(password);
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -48,6 +102,20 @@ export default function Login() {
         // SIGNUP FLOW
         if (role === ROLES.ADMIN && adminSecretKey.trim() !== 'SAARTHI_ADMIN_2026') {
           setError('Invalid Admin Security Key. Admin accounts require authorization key.');
+          setLoading(false);
+          return;
+        }
+
+        const checks = getPasswordChecks(password);
+        if (!checks.length || !checks.upper || !checks.lower || !checks.number || !checks.special) {
+          setError(
+            'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.',
+          );
+          setLoading(false);
+          return;
+        }
+        if (confirmPassword !== password) {
+          setError('Confirm password must match the password.');
           setLoading(false);
           return;
         }
@@ -133,7 +201,10 @@ export default function Login() {
         <div className="flex bg-slate-100 p-1 rounded-2xl mb-6 border border-slate-200">
           <button
             type="button"
-            onClick={() => { setMode('login'); setError(''); }}
+            onClick={() => {
+              setMode('login');
+              setError('');
+            }}
             className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
               mode === 'login' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'
             }`}
@@ -142,7 +213,10 @@ export default function Login() {
           </button>
           <button
             type="button"
-            onClick={() => { setMode('signup'); setError(''); }}
+            onClick={() => {
+              setMode('signup');
+              setError('');
+            }}
             className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
               mode === 'signup' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'
             }`}
@@ -205,7 +279,10 @@ export default function Login() {
                 Password
               </label>
               {mode === 'login' && (
-                <Link to="/iq/forgot-password" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+                <Link
+                  to="/iq/forgot-password"
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                >
                   Forgot password?
                 </Link>
               )}
@@ -234,6 +311,69 @@ export default function Login() {
 
           {mode === 'signup' && (
             <>
+              {/* Confirm password */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repeat password"
+                    required
+                    className="w-full pl-11 pr-11 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Password requirements checklist (signup only) */}
+              <div className="mt-2 bg-slate-50 rounded-lg p-3 border border-slate-200">
+                <p className="text-[11px] font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  Password requirements
+                  <span className="text-[10px] font-normal text-slate-500">
+                    (updates as you type)
+                  </span>
+                </p>
+                <div className="grid grid-cols-1 gap-1.5">
+                  <PasswordRequirement
+                    label="At least 8 characters"
+                    met={passwordChecks.length}
+                  />
+                  <PasswordRequirement
+                    label="Contains uppercase letter"
+                    met={passwordChecks.upper}
+                  />
+                  <PasswordRequirement
+                    label="Contains lowercase letter"
+                    met={passwordChecks.lower}
+                  />
+                  <PasswordRequirement
+                    label="Contains number"
+                    met={passwordChecks.number}
+                  />
+                  <PasswordRequirement
+                    label="Contains special character"
+                    met={passwordChecks.special}
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                   Select Role
@@ -303,4 +443,4 @@ export default function Login() {
       </div>
     </div>
   );
-}
+}

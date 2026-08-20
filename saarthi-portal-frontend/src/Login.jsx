@@ -35,6 +35,9 @@ const getPasswordChecks = (password) => {
   };
 };
 
+const isPasswordFullyValid = (checks) =>
+  checks.length && checks.upper && checks.lower && checks.number && checks.special;
+
 const PasswordRequirement = ({ label, met }) => {
   return (
     <div
@@ -65,10 +68,13 @@ export default function Login() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const passwordChecks = getPasswordChecks(password);
+  const passwordFullyValid = isPasswordFullyValid(passwordChecks);
+  const showChecklist = mode === 'signup' && passwordFocused && !passwordFullyValid;
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -107,7 +113,7 @@ export default function Login() {
         }
 
         const checks = getPasswordChecks(password);
-        if (!checks.length || !checks.upper || !checks.lower || !checks.number || !checks.special) {
+        if (!isPasswordFullyValid(checks)) {
           setError(
             'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.',
           );
@@ -295,6 +301,8 @@ export default function Login() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => setPasswordFocused(false)}
                 placeholder="••••••••"
                 required
                 className="w-full pl-11 pr-11 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
@@ -307,6 +315,57 @@ export default function Login() {
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
+
+            {/* Password requirements checklist: shows on focus, collapses once fully valid (signup only) */}
+            {mode === 'signup' && (
+              <div
+                className={`grid transition-all duration-300 ease-in-out ${
+                  showChecklist ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0 mt-0'
+                }`}
+                style={{ overflow: 'hidden' }}
+              >
+                <div className="min-h-0">
+                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                    <p className="text-[11px] font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                      Password requirements
+                      <span className="text-[10px] font-normal text-slate-500">
+                        (updates as you type)
+                      </span>
+                    </p>
+                    <div className="grid grid-cols-1 gap-1.5">
+                      <PasswordRequirement
+                        label="At least 8 characters"
+                        met={passwordChecks.length}
+                      />
+                      <PasswordRequirement
+                        label="Contains uppercase letter"
+                        met={passwordChecks.upper}
+                      />
+                      <PasswordRequirement
+                        label="Contains lowercase letter"
+                        met={passwordChecks.lower}
+                      />
+                      <PasswordRequirement
+                        label="Contains number"
+                        met={passwordChecks.number}
+                      />
+                      <PasswordRequirement
+                        label="Contains special character"
+                        met={passwordChecks.special}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Subtle confirmation once all requirements are satisfied and field loses focus/checklist collapses */}
+            {mode === 'signup' && password && passwordFullyValid && !showChecklist && (
+              <div className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-green-600 animate-in fade-in">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Strong password</span>
+              </div>
+            )}
           </div>
 
           {mode === 'signup' && (
@@ -340,38 +399,18 @@ export default function Login() {
                     )}
                   </button>
                 </div>
-              </div>
-
-              {/* Password requirements checklist (signup only) */}
-              <div className="mt-2 bg-slate-50 rounded-lg p-3 border border-slate-200">
-                <p className="text-[11px] font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                  Password requirements
-                  <span className="text-[10px] font-normal text-slate-500">
-                    (updates as you type)
-                  </span>
-                </p>
-                <div className="grid grid-cols-1 gap-1.5">
-                  <PasswordRequirement
-                    label="At least 8 characters"
-                    met={passwordChecks.length}
-                  />
-                  <PasswordRequirement
-                    label="Contains uppercase letter"
-                    met={passwordChecks.upper}
-                  />
-                  <PasswordRequirement
-                    label="Contains lowercase letter"
-                    met={passwordChecks.lower}
-                  />
-                  <PasswordRequirement
-                    label="Contains number"
-                    met={passwordChecks.number}
-                  />
-                  <PasswordRequirement
-                    label="Contains special character"
-                    met={passwordChecks.special}
-                  />
-                </div>
+                {confirmPassword && confirmPassword !== password && (
+                  <p className="mt-1.5 text-[11px] font-medium text-red-600 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    Passwords do not match
+                  </p>
+                )}
+                {confirmPassword && confirmPassword === password && password && (
+                  <p className="mt-1.5 text-[11px] font-medium text-green-600 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Passwords match
+                  </p>
+                )}
               </div>
 
               <div>

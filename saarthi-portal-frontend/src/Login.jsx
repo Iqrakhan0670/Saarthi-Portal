@@ -47,21 +47,25 @@ const ROLE_OPTIONS = [
 ];
 
 const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-900';
+
+const labelClass = 'block text-sm font-medium text-neutral-700 dark:text-zinc-300 mb-1.5';
+const inputClass =
+  'w-full pl-11 pr-4 py-3 bg-neutral-50 dark:bg-zinc-800 border border-neutral-200 dark:border-zinc-700 rounded-md text-neutral-900 dark:text-zinc-100 placeholder-neutral-400 dark:placeholder-zinc-500 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors';
 
 const PasswordRequirement = ({ label, met }) => {
   return (
     <div
       className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors duration-200 border ${
         met
-          ? 'bg-green-50 border-green-200 text-green-700'
-          : 'bg-neutral-50 border-neutral-200 text-neutral-500'
+          ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-950/30 dark:border-green-900 dark:text-green-400'
+          : 'bg-neutral-50 border-neutral-200 text-neutral-500 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-500'
       }`}
     >
       {met ? (
-        <CheckCircle2 className="w-4 h-4 text-green-600" />
+        <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
       ) : (
-        <AlertCircle className="w-4 h-4 text-neutral-400" />
+        <AlertCircle className="w-4 h-4 text-neutral-400 dark:text-zinc-500" />
       )}
       <span>{label}</span>
     </div>
@@ -204,18 +208,18 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans">
-      <div className="w-full max-w-md bg-white rounded-lg border border-neutral-200 p-8 sm:p-10 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_16px_32px_-12px_rgba(0,0,0,0.12)]">
+      <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-lg border border-neutral-200 dark:border-zinc-800 p-8 sm:p-10 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_16px_32px_-12px_rgba(0,0,0,0.12)]">
         {/* Top Header */}
         <div className="mb-6">
-          <div className="w-11 h-11 bg-neutral-900 rounded-lg flex items-center justify-center mb-4 text-white font-semibold text-lg">
+          <div className="w-11 h-11 bg-neutral-900 dark:bg-white rounded-lg flex items-center justify-center mb-4 text-white dark:text-zinc-950 font-semibold text-lg">
             S
           </div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-neutral-900 tracking-tight">Saarthi Portal</h1>
-          <p className="text-neutral-500 text-sm mt-1">Enterprise role-based access control</p>
+          <h1 className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-zinc-100 tracking-tight">Saarthi Portal</h1>
+          <p className="text-neutral-500 dark:text-zinc-400 text-sm mt-1">Enterprise role-based access control</p>
         </div>
 
         {/* Mode Switcher */}
-        <div className="flex bg-neutral-100 p-1 rounded-md mb-6 border border-neutral-200">
+        <div className="flex bg-neutral-100 dark:bg-zinc-800 p-1 rounded-md mb-6 border border-neutral-200 dark:border-zinc-700">
           <button
             type="button"
             onClick={() => {
@@ -223,7 +227,9 @@ export default function Login() {
               setError('');
             }}
             className={`flex-1 py-2 text-xs font-semibold rounded-md transition-colors ${focusRing} ${
-              mode === 'login' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-800'
+              mode === 'login'
+                ? 'bg-white dark:bg-zinc-700 text-neutral-900 dark:text-zinc-100 shadow-sm'
+                : 'text-neutral-500 dark:text-zinc-400 hover:text-neutral-800 dark:hover:text-zinc-200'
             }`}
           >
             Sign In
@@ -235,7 +241,9 @@ export default function Login() {
               setError('');
             }}
             className={`flex-1 py-2 text-xs font-semibold rounded-md transition-colors ${focusRing} ${
-              mode === 'signup' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-800'
+              mode === 'signup'
+                ? 'bg-white dark:bg-zinc-700 text-neutral-900 dark:text-zinc-100 shadow-sm'
+                : 'text-neutral-500 dark:text-zinc-400 hover:text-neutral-800 dark:hover:text-zinc-200'
             }`}
           >
             Sign Up
@@ -243,7 +251,7 @@ export default function Login() {
         </div>
 
         {error && (
-          <div className="mb-6 p-3.5 rounded-md bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2">
+          <div className="mb-6 p-3.5 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm flex items-start gap-2">
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
             <span>{error}</span>
           </div>
@@ -252,11 +260,9 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === 'signup' && (
             <div>
-              <label className="block text-xs font-medium text-neutral-600 uppercase tracking-wider mb-1.5">
-                Full Name
-              </label>
+              <label className={labelClass}>Full name</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-zinc-500">
                   <UserIcon className="w-5 h-5" />
                 </div>
                 <input
@@ -265,18 +271,16 @@ export default function Login() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="John Doe"
                   required
-                  className={`w-full pl-11 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-900 placeholder-neutral-400 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus:bg-white transition-colors`}
+                  className={inputClass}
                 />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-medium text-neutral-600 uppercase tracking-wider mb-1.5">
-              Email Address
-            </label>
+            <label className={labelClass}>Email address</label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-zinc-500">
                 <Mail className="w-5 h-5" />
               </div>
               <input
@@ -285,27 +289,25 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@company.com"
                 required
-                className="w-full pl-11 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-900 placeholder-neutral-400 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus:bg-white transition-colors"
+                className={inputClass}
               />
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-medium text-neutral-600 uppercase tracking-wider">
-                Password
-              </label>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-zinc-300">Password</label>
               {mode === 'login' && (
                 <Link
                   to="/forgot-password"
-                  className={`text-xs font-medium text-indigo-600 hover:text-indigo-700 rounded-sm ${focusRing}`}
+                  className={`text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 rounded-sm ${focusRing}`}
                 >
                   Forgot password?
                 </Link>
               )}
             </div>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-zinc-500">
                 <Lock className="w-5 h-5" />
               </div>
               <input
@@ -316,12 +318,12 @@ export default function Login() {
                 onBlur={() => setPasswordFocused(false)}
                 placeholder="••••••••"
                 required
-                className="w-full pl-11 pr-11 py-3 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-900 placeholder-neutral-400 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus:bg-white transition-colors"
+                className={`${inputClass} pr-11`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className={`absolute inset-y-0 right-0 pr-3.5 flex items-center text-neutral-400 hover:text-neutral-600 rounded-sm ${focusRing}`}
+                className={`absolute inset-y-0 right-0 pr-3.5 flex items-center text-neutral-400 dark:text-zinc-500 hover:text-neutral-600 dark:hover:text-zinc-300 rounded-sm ${focusRing}`}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -336,10 +338,10 @@ export default function Login() {
                 style={{ overflow: 'hidden' }}
               >
                 <div className="min-h-0">
-                  <div className="bg-neutral-50 rounded-md p-3 border border-neutral-200">
-                    <p className="text-[11px] font-medium text-neutral-600 mb-2 flex items-center gap-2">
+                  <div className="bg-neutral-50 dark:bg-zinc-800/60 rounded-md p-3 border border-neutral-200 dark:border-zinc-700">
+                    <p className="text-[11px] font-medium text-neutral-600 dark:text-zinc-400 mb-2 flex items-center gap-2">
                       Password requirements
-                      <span className="text-[10px] font-normal text-neutral-400">
+                      <span className="text-[10px] font-normal text-neutral-400 dark:text-zinc-500">
                         (updates as you type)
                       </span>
                     </p>
@@ -357,7 +359,7 @@ export default function Login() {
 
             {/* Subtle confirmation once all requirements are satisfied and field loses focus/checklist collapses */}
             {mode === 'signup' && password && passwordFullyValid && !showChecklist && (
-              <div className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-green-600">
+              <div className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-green-600 dark:text-green-400">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Strong password</span>
               </div>
@@ -368,11 +370,9 @@ export default function Login() {
             <>
               {/* Confirm password */}
               <div>
-                <label className="block text-xs font-medium text-neutral-600 uppercase tracking-wider mb-1.5">
-                  Confirm Password
-                </label>
+                <label className={labelClass}>Confirm password</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-zinc-500">
                     <Lock className="w-5 h-5" />
                   </div>
                   <input
@@ -381,24 +381,24 @@ export default function Login() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Repeat password"
                     required
-                    className="w-full pl-11 pr-11 py-3 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-900 placeholder-neutral-400 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus:bg-white transition-colors"
+                    className={`${inputClass} pr-11`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className={`absolute inset-y-0 right-0 pr-3.5 flex items-center text-neutral-400 hover:text-neutral-600 rounded-sm ${focusRing}`}
+                    className={`absolute inset-y-0 right-0 pr-3.5 flex items-center text-neutral-400 dark:text-zinc-500 hover:text-neutral-600 dark:hover:text-zinc-300 rounded-sm ${focusRing}`}
                   >
                     {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
                 {confirmPassword && confirmPassword !== password && (
-                  <p className="mt-1.5 text-[11px] font-medium text-red-600 flex items-center gap-1.5">
+                  <p className="mt-1.5 text-[11px] font-medium text-red-600 dark:text-red-400 flex items-center gap-1.5">
                     <AlertCircle className="w-3.5 h-3.5" />
                     Passwords do not match
                   </p>
                 )}
                 {confirmPassword && confirmPassword === password && password && (
-                  <p className="mt-1.5 text-[11px] font-medium text-green-600 flex items-center gap-1.5">
+                  <p className="mt-1.5 text-[11px] font-medium text-green-600 dark:text-green-400 flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     Passwords match
                   </p>
@@ -406,18 +406,16 @@ export default function Login() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-600 uppercase tracking-wider mb-1.5">
-                  Select Role
-                </label>
+                <label className={labelClass}>Select role</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 dark:text-zinc-500">
                     <Briefcase className="w-5 h-5" />
                   </div>
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
                     required
-                    className="w-full pl-11 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-md text-neutral-900 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus:bg-white transition-colors cursor-pointer font-medium"
+                    className={`${inputClass} cursor-pointer font-medium`}
                   >
                     {ROLE_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -429,9 +427,9 @@ export default function Login() {
               </div>
 
               {role === ROLES.ADMIN && (
-                <div className="bg-amber-50 p-3.5 rounded-md border border-amber-200 space-y-2">
-                  <label className="block text-xs font-medium text-amber-900 uppercase tracking-wider">
-                    Admin Security Key
+                <div className="bg-amber-50 dark:bg-amber-950/30 p-3.5 rounded-md border border-amber-200 dark:border-amber-900 space-y-2">
+                  <label className="block text-sm font-medium text-amber-900 dark:text-amber-300">
+                    Admin security key
                   </label>
                   <input
                     type="password"
@@ -439,10 +437,10 @@ export default function Login() {
                     onChange={(e) => setAdminSecretKey(e.target.value)}
                     placeholder="Enter Admin Security Key"
                     required
-                    className="w-full px-3 py-2 bg-white border border-amber-300 rounded-md text-neutral-900 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-amber-300 dark:border-amber-800 rounded-md text-neutral-900 dark:text-zinc-100 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                   />
-                  <p className="text-[11px] text-amber-800">
-                    Admin creation requires security validation. (Key: <code className="bg-amber-100 px-1 rounded">SAARTHI_ADMIN_2026</code>)
+                  <p className="text-[11px] text-amber-800 dark:text-amber-400">
+                    Admin creation requires security validation. (Key: <code className="bg-amber-100 dark:bg-amber-900/50 px-1 rounded">SAARTHI_ADMIN_2026</code>)
                   </p>
                 </div>
               )}
@@ -465,8 +463,8 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="mt-6 pt-5 border-t border-neutral-100 text-center">
-          <p className="text-xs text-neutral-400">
+        <div className="mt-6 pt-5 border-t border-neutral-100 dark:border-zinc-800 text-center">
+          <p className="text-xs text-neutral-400 dark:text-zinc-500">
             Protected by enterprise-grade 6-role RBAC
           </p>
         </div>

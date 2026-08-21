@@ -214,3 +214,22 @@ export const restoreAdmin = async(adminId) => {
         body: JSON.stringify({}),
     })
 }
+
+// Employer / Pending User Approvals APIs
+export const getPendingApprovals = async() => {
+    return fetchWithAuth("/api/admin/employer-approvals")
+}
+
+export const approvePendingUser = async(id, notes = "") => {
+    return fetchWithAuth("/api/admin/employer-approvals/approve", {
+        method: "POST",
+        body: JSON.stringify({ id, notes }),
+    })
+}
+
+export const rejectPendingUser = async(id, notes = "") => {
+    return fetchWithAuth("/api/admin/employer-approvals/reject", {
+        method: "POST",
+        body: JSON.stringify({ id, notes }),
+    })
+}

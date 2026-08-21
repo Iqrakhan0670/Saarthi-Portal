@@ -8,8 +8,6 @@ import UnifiedDashboard from './components/dashboard/UnifiedDashboard';
 import Login from './Login';
 import ForgotPassword from './ForgotPassword';
 
-// IQ module removed from main shell to simplify routing and avoid legacy flows
-// const IqApp = lazy(() => import('./iq/IqApp'));
 const JobsApp = lazy(() => import('./jobs/JobsApp'));
 const AdminApp = lazy(() => import('./admin/AdminApp'));
 

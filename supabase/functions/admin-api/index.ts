@@ -26,10 +26,10 @@ Deno.serve(async (req) => {
     // (e.g. path="/api/admin/users?page=1&limit=10") so route matching works correctly.
     const path = rawPath.replace(/^\/api\//, "").replace(/^api\//, "").split("?")[0];
 
-    // --- Authentication & authorisation (every admin-api route requires a
-    // real, verified Supabase session token). Admin login itself happens
-    // through the shared /login edge function, which returns an actual
-    // Supabase JWT that requireAuth() below can cryptographically verify. ---
+    // --- Authentication & authorisation ---
+    // Note: there is no separate admin login route here. Admin login goes through
+    // the shared /login function (real Supabase Auth JWT), same as every other role.
+    // Every path below requires a valid, verified admin token.
     const authResult = await requireAuth(req);
     // requireAuth returns a Response on failure (401)
     if (authResult instanceof Response) return authResult;

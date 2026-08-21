@@ -41,11 +41,9 @@ const fetchWithAuth = async(endpoint, options = {}) => {
     }
 }
 
-// NOTE: The old loginAdmin() helper (calling admin-api's admin/auth/login route)
-// was removed. That route issued a fake base64 token via btoa(), not a real
-// Supabase JWT, and was unused by the app — real admin auth goes through the
-// main /login edge function (see Login.jsx), which returns a verified Supabase
-// session token that requireAuth() on the backend actually validates.
+// Note: there is no separate admin login call here. Admin login goes through
+// the shared /login flow (see Login.jsx / AuthContext), same as every other
+// role, and returns a real Supabase Auth JWT.
 
 export const createAdmin = async(adminData) => {
     return fetchWithAuth("/api/admin/auth/create", {

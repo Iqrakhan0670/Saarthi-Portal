@@ -382,6 +382,16 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
+# Disable Supabase's platform-level JWT check for functions that handle their own
+# auth via requireAuth() in _shared/auth.ts.  Without this, OPTIONS preflight
+# requests (which carry no JWT) are rejected with 401 before our code runs,
+# causing CORS failures in the browser.
+[functions.admin-api]
+verify_jwt = false
+
+[functions.users-manage]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

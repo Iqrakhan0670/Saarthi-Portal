@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Search, Download, Loader } from 'lucide-react';
 
 const Resumes = () => {
-  const API_BASE_URL = import.meta.env.VITE_API_URL || '';
-  const token = localStorage.getItem('adminToken');
+  const API_BASE_URL = `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/admin-api?path=`;
+  const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
 
   // State
   const [resumes, setResumes] = useState([]);

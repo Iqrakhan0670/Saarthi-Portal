@@ -102,8 +102,13 @@ Talent Corner Team`
   React.useEffect(() => {
     const fetchEmailAccounts = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || '';
-        const response = await fetch(`${apiUrl}/api/admin/email-accounts`);
+        const apiUrl = `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/admin-api?path=`;
+        const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
+        const response = await fetch(`${apiUrl}admin/email-accounts`, {
+          headers: {
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        });
         const data = await response.json();
         if (data.accounts && data.accounts.length > 0) {
           setEmailAccounts(data.accounts);
@@ -125,8 +130,13 @@ Talent Corner Team`
     
     const fetchDailyEmailCount = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || '';
-        const response = await fetch(`${apiUrl}/api/admin/daily-email-count`);
+        const apiUrl = `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/admin-api?path=`;
+        const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
+        const response = await fetch(`${apiUrl}admin/daily-email-count`, {
+          headers: {
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        });
         const data = await response.json();
         setDailyEmailCount(data);
       } catch (error) {
@@ -561,7 +571,7 @@ Talent Corner Team`
     setErrorMessage('');
 
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
       
       // Show daily limit info if close to limit
       if (dailyEmailCount.remaining < emailList.length) {
@@ -570,7 +580,7 @@ Talent Corner Team`
       }
 
       // Send email request to new API
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/send-email`, {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/admin-api?path=admin/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

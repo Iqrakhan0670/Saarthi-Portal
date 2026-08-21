@@ -85,6 +85,7 @@ export default function Login() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   const passwordChecks = getPasswordChecks(password);
@@ -97,6 +98,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
     setLoading(true);
 
     try {
@@ -114,7 +116,8 @@ export default function Login() {
 
         if (response.ok) {
           login(data);
-          const targetDashboard = getDefaultDashboard(data.role || data.user?.role);
+          const derivedRole = data.is_admin ? ROLES.ADMIN : (data.role || ROLES.JOB_SEEKER);
+          const targetDashboard = getDefaultDashboard(derivedRole);
           navigate(targetDashboard);
         } else {
           setError(data.message || 'Login failed. Please check your credentials.');
@@ -148,59 +151,30 @@ export default function Login() {
           role,
         };
 
-        try {
-          const response = await fetch(
-            `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/signup`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(signupPayload),
-            }
-          );
-
-          if (response.ok) {
-            const data = await response.json().catch(() => ({}));
-            const authData = {
-              id: data.id || data.user?.id || 'usr_' + Date.now(),
-              name,
-              email,
-              role,
-              token: data.token || 'token_' + Date.now(),
-            };
-            login(authData);
-            const targetDashboard = getDefaultDashboard(role);
-            navigate(targetDashboard);
-            return;
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/register`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(signupPayload),
           }
-        } catch (fetchErr) {
-          console.warn('Remote signup endpoint unavailable, initializing user session locally.');
-        }
+        );
 
-        // Seamless registration completion fallback
-        const fallbackData = {
-          id: 'usr_' + Date.now(),
-          name,
-          email,
-          role,
-          token: 'token_' + Date.now(),
-        };
-        login(fallbackData);
-        const targetDashboard = getDefaultDashboard(role);
-        navigate(targetDashboard);
+        const data = await response.json().catch(() => ({}));
+
+        if (response.ok) {
+          setSuccessMessage(data.message || 'Registration submitted, awaiting admin approval.');
+          setMode('login');
+          setPassword('');
+          setConfirmPassword('');
+          setAdminSecretKey('');
+        } else {
+          setError(data.message || 'Registration failed. Please try again.');
+        }
       }
     } catch (err) {
       console.error('Authentication error:', err);
-      // Fallback for seamless demo/testing if offline backend
-      const fallbackData = {
-        id: 'usr_' + Date.now(),
-        name: name || email.split('@')[0],
-        email,
-        role: mode === 'signup' ? role : ROLES.JOB_SEEKER,
-        token: 'token_' + Date.now(),
-      };
-      login(fallbackData);
-      const targetDashboard = getDefaultDashboard(fallbackData.role);
-      navigate(targetDashboard);
+      setError(err.message || 'An error occurred. Please check your network connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -225,6 +199,7 @@ export default function Login() {
             onClick={() => {
               setMode('login');
               setError('');
+              setSuccessMessage('');
             }}
             className={`flex-1 py-2 text-xs font-semibold rounded-md transition-colors ${focusRing} ${
               mode === 'login'
@@ -239,6 +214,7 @@ export default function Login() {
             onClick={() => {
               setMode('signup');
               setError('');
+              setSuccessMessage('');
             }}
             className={`flex-1 py-2 text-xs font-semibold rounded-md transition-colors ${focusRing} ${
               mode === 'signup'
@@ -254,6 +230,13 @@ export default function Login() {
           <div className="mb-6 p-3.5 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm flex items-start gap-2">
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
             <span>{error}</span>
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="mb-6 p-3.5 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 text-green-700 dark:text-green-400 text-sm flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>{successMessage}</span>
           </div>
         )}
 

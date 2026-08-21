@@ -41,63 +41,11 @@ const fetchWithAuth = async(endpoint, options = {}) => {
     }
 }
 
-// Auth API calls
-export const loginAdmin = async(credentials) => {
-    try {
-        console.log("🔐 [Frontend] Attempting admin login...");
-        const response = await fetch(`${API_BASE_URL}/api/admin/auth/login`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(credentials),
-        })
-
-        console.log(`📊 [Frontend] Response status: ${response.status}`);
-        console.log(`📊 [Frontend] Response headers:`, {
-            contentType: response.headers.get('content-type'),
-            contentLength: response.headers.get('content-length')
-        });
-
-        // Check if response has content
-        const responseText = await response.text()
-
-        console.log(`📊 [Frontend] Response text length: ${responseText.length}`);
-        console.log(`📊 [Frontend] Response text preview: ${responseText.substring(0, 200)}`);
-
-        if (!responseText || responseText.trim() === '') {
-            console.error("❌ [Frontend] Empty response from server")
-            console.error("❌ [Frontend] Possible causes:")
-            console.error("   - Backend server is not running")
-            console.error("   - API_BASE_URL is incorrect:", API_BASE_URL)
-            console.error("   - CORS is blocking the response")
-            console.error("   - Server crashed or returned invalid response")
-            throw new Error(`Empty response from ${API_BASE_URL}/api/admin/auth/login. Backend might not be running.`)
-        }
-
-        let data
-        try {
-            data = JSON.parse(responseText)
-            console.log("✅ [Frontend] Successfully parsed JSON response");
-        } catch (parseError) {
-            console.error("❌ [Frontend] Failed to parse JSON:", responseText)
-            console.error("❌ [Frontend] Response is not valid JSON. Server may have returned HTML error page.")
-            throw new Error(`Server returned invalid JSON. Got: ${responseText.substring(0, 100)}`)
-        }
-
-        if (!response.ok) {
-            console.error("❌ [Frontend] Server returned error:", data.error);
-            throw new Error(data.error || `Login failed with status ${response.status}`)
-        }
-
-        console.log("✅ [Frontend] Login successful!");
-        return data
-    } catch (error) {
-        console.error("❌ [Frontend] Login API error:", error.message)
-        console.error("❌ [Frontend] Full error:", error)
-        throw new Error(error.message || "Failed to connect to server. Please ensure the backend is running and accessible at " + API_BASE_URL)
-    }
-}
+// NOTE: The old loginAdmin() helper (calling admin-api's admin/auth/login route)
+// was removed. That route issued a fake base64 token via btoa(), not a real
+// Supabase JWT, and was unused by the app — real admin auth goes through the
+// main /login edge function (see Login.jsx), which returns a verified Supabase
+// session token that requireAuth() on the backend actually validates.
 
 export const createAdmin = async(adminData) => {
     return fetchWithAuth("/api/admin/auth/create", {
@@ -232,4 +180,4 @@ export const rejectPendingUser = async(id, notes = "") => {
         method: "POST",
         body: JSON.stringify({ id, notes }),
     })
-}
+}

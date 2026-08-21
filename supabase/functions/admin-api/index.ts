@@ -26,41 +26,19 @@ Deno.serve(async (req) => {
     // (e.g. path="/api/admin/users?page=1&limit=10") so route matching works correctly.
     const path = rawPath.replace(/^\/api\//, "").replace(/^api\//, "").split("?")[0];
 
-    // --- Authentication & authorisation (skip only the login route) ---
-    if (path !== "admin/login" && path !== "admin/auth/login") {
-      const authResult = await requireAuth(req);
-      // requireAuth returns a Response on failure (401)
-      if (authResult instanceof Response) return authResult;
-      // Strict Server-Side Barrier: Non-admin users get 403 Forbidden immediately
-      if (!authResult.is_admin) {
-        return new Response(
-          JSON.stringify({ error: "Forbidden: Admin access required" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-    }
-
-    // =====================================================================
-    // Admin Authentication
-    // =====================================================================
-    if ((path === "admin/login" || path === "admin/auth/login") && req.method === "POST") {
-      const body = await req.json();
-      const { data: admin, error } = await supabase.from("users").select("*").eq("email", body.email).eq("is_admin", true).single();
-      if (error || !admin) {
-        return new Response(JSON.stringify({ error: "Invalid credentials" }), {
-          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const incomingHash = await hashPassword(body.password);
-      if (incomingHash !== admin.password_hash) {
-        return new Response(JSON.stringify({ error: "Invalid credentials" }), {
-          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const token = btoa(JSON.stringify({ id: admin.id, email: admin.email, ts: Date.now() }));
-      return new Response(JSON.stringify({ success: true, token, admin: { id: admin.id, name: admin.full_name, email: admin.email } }), {
-        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // --- Authentication & authorisation (every admin-api route requires a
+    // real, verified Supabase session token). Admin login itself happens
+    // through the shared /login edge function, which returns an actual
+    // Supabase JWT that requireAuth() below can cryptographically verify. ---
+    const authResult = await requireAuth(req);
+    // requireAuth returns a Response on failure (401)
+    if (authResult instanceof Response) return authResult;
+    // Strict Server-Side Barrier: Non-admin users get 403 Forbidden immediately
+    if (!authResult.is_admin) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: Admin access required" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     // =====================================================================

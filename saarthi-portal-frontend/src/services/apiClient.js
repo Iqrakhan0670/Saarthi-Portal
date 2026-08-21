@@ -1,150 +1,133 @@
 /**
- * Centralized API Client for Saarthi Portal
- * Automatically handles:
- * - Environment base URL resolution
- * - Authorization Bearer token injection from localStorage
- * - JSON serialization & header handling
- * - Uniform error normalization
+ * Zero-Trust API Client
+ * Supports all Supabase auth storage formats and injects apikey + bearer tokens.
  */
 
-const FUNCTIONS_BASE_URL =
-    import.meta.env.VITE_SUPABASE_FUNCTIONS_URL || 'https://nrgmjczvxchyavisdalq.supabase.co/functions/v1';
-const API_BASE_URL =
-    import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const TOKEN_KEY = 'saarthi_auth_token';
 
 export const getStoredAccessToken = () => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('token') || localStorage.getItem('adminToken') || null;
-};
+  try {
+    // 1. Direct tokens
+    const directToken =
+      localStorage.getItem('saarthi_auth_token') ||
+      localStorage.getItem('token') ||
+      localStorage.getItem('access_token');
+    if (directToken) return directToken;
 
-export const getAuthHeaders = (customHeaders = {}, isFormData = false) => {
-    const headers = {...customHeaders };
-
-    if (!isFormData && !headers['Content-Type']) {
-        headers['Content-Type'] = 'application/json';
-    }
-
-    const token = getStoredAccessToken();
-    if (token && !headers.Authorization) {
-        headers.Authorization = `Bearer ${token}`;
-    }
-
-
-
-    return headers;
-};
-
-class ApiClient {
-    constructor(baseUrl) {
-        this.baseUrl = baseUrl;
-    }
-
-    // Retrieve active JWT token
-    getToken() {
-        return getStoredAccessToken();
-    }
-
-    // Get standard headers with optional token injection
-    getHeaders(customHeaders = {}, isFormData = false) {
-        return getAuthHeaders(customHeaders, isFormData);
-    }
-
-    // Process and format response
-    async handleResponse(response) {
-        if (!response.ok) {
-            let errorData;
-            try {
-                errorData = await response.json();
-            } catch {
-                errorData = { message: `Request failed with status ${response.status}: ${response.statusText}` };
-            }
-
-            const error = new Error(errorData.message || errorData.error || 'API request failed');
-            error.status = response.status;
-            error.data = errorData;
-            throw error;
-        }
-
+    // 2. Supabase Auth format
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('sb-') || key.includes('-auth-token'))) {
         try {
-            return await response.json();
-        } catch {
-            return null;
-        }
+          const parsed = JSON.parse(localStorage.getItem(key));
+          if (parsed?.access_token) return parsed.access_token;
+          if (parsed?.token) return parsed.token;
+          if (parsed?.currentSession?.access_token) return parsed.currentSession.access_token;
+        } catch {}
+      }
     }
 
-    // HTTP GET
-    async get(endpoint, queryParams = {}, customHeaders = {}) {
-        let url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
-
-        if (queryParams && Object.keys(queryParams).length > 0) {
-            const searchParams = new URLSearchParams();
-            Object.entries(queryParams).forEach(([key, value]) => {
-                if (value !== undefined && value !== null) {
-                    searchParams.append(key, value);
-                }
-            });
-            url += (url.includes('?') ? '&' : '?') + searchParams.toString();
-        }
-
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: this.getHeaders(customHeaders),
-        });
-
-        return this.handleResponse(response);
+    // 3. User object token
+    const userObj = localStorage.getItem('user');
+    if (userObj) {
+      try {
+        const parsed = JSON.parse(userObj);
+        if (parsed?.token) return parsed.token;
+        if (parsed?.access_token) return parsed.access_token;
+      } catch {}
     }
 
-    // HTTP POST
-    async post(endpoint, body = {}, customHeaders = {}) {
-        const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: this.getHeaders(customHeaders),
-            body: JSON.stringify(body),
-        });
+    return null;
+  } catch (err) {
+    console.error('Failed to retrieve token from storage:', err);
+    return null;
+  }
+};
 
-        return this.handleResponse(response);
+export const setStoredAccessToken = (token) => {
+  try {
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
     }
+  } catch (err) {
+    console.error('Failed to write token to storage:', err);
+  }
+};
 
-    // HTTP PUT
-    async put(endpoint, body = {}, customHeaders = {}) {
-        const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
-        const response = await fetch(url, {
-            method: 'PUT',
-            headers: this.getHeaders(customHeaders),
-            body: JSON.stringify(body),
-        });
+export const clearStoredAuth = () => {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('token');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('role');
+  } catch (err) {
+    console.error('Failed to clear stored auth:', err);
+  }
+};
 
-        return this.handleResponse(response);
-    }
+export const getAuthHeaders = () => {
+  const token = getStoredAccessToken();
+  const anonKey =
+    import.meta.env.VITE_SUPABASE_ANON_KEY ||
+    import.meta.env.VITE_SUPABASE_KEY ||
+    '';
 
-    // HTTP DELETE
-    async delete(endpoint, customHeaders = {}) {
-        const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
-        const response = await fetch(url, {
-            method: 'DELETE',
-            headers: this.getHeaders(customHeaders),
-        });
+  const headers = {
+    'Content-Type': 'application/json',
+  };
 
-        return this.handleResponse(response);
-    }
+  if (anonKey) {
+    headers['apikey'] = anonKey;
+  }
 
-    // Multipart Form Data Upload
-    async upload(endpoint, formData, customHeaders = {}) {
-        const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: this.getHeaders(customHeaders, true),
-            body: formData,
-        });
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  } else if (anonKey) {
+    headers['Authorization'] = `Bearer ${anonKey}`;
+  }
 
-        return this.handleResponse(response);
-    }
+  return headers;
+};
+
+export const getHeaders = getAuthHeaders;
+export const getStoredToken = getStoredAccessToken;
+export const setStoredToken = setStoredAccessToken;
+
+export async function apiClient(endpoint, options = {}) {
+  const baseURL =
+    import.meta.env.VITE_SUPABASE_FUNCTIONS_URL ||
+    (import.meta.env.VITE_SUPABASE_URL
+      ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
+      : '/api');
+
+  const url = endpoint.startsWith('http')
+    ? endpoint
+    : `${baseURL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+
+  const defaultHeaders = getAuthHeaders();
+
+  const config = {
+    ...options,
+    headers: {
+      ...defaultHeaders,
+      ...(options.headers || {}),
+    },
+  };
+
+  delete config.headers['x-user-role'];
+  delete config.headers['X-User-Role'];
+  delete config.headers['role'];
+
+  try {
+    const response = await fetch(url, config);
+    return response;
+  } catch (err) {
+    console.error(`API request error for ${url}:`, err);
+    throw err;
+  }
 }
-
-// Export default instances for Supabase Functions and Microservice API
-export const functionsApi = new ApiClient(FUNCTIONS_BASE_URL);
-export const backendApi = new ApiClient(API_BASE_URL);
-export const apiClient = functionsApi;
 
 export default apiClient;

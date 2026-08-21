@@ -23,17 +23,17 @@ const focusRing =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2';
 
 export default function UnifiedDashboard() {
-  const { user, role, defaultDashboard, isAdmin, isEmployer, isSeeker, isRecruitment, isBD, isIQAnalyst } = useAuth();
+  const { user, role, defaultDashboard, isAdmin, isEmployer, isSeeker, isRecruitment, isBD } = useAuth();
   const { isDark } = useTheme();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (defaultDashboard && defaultDashboard !== '/dashboard') {
+    if (defaultDashboard && defaultDashboard !== '/dashboard' && defaultDashboard !== '/admin/dashboard') {
       navigate(defaultDashboard, { replace: true });
     }
   }, [role, defaultDashboard, navigate]);
 
-  const [stats, setStats] = useState({
+  const [stats] = useState({
     candidateCount: '24,850+',
     activeJobsCount: '18',
     totalApplications: '142',
@@ -42,36 +42,46 @@ export default function UnifiedDashboard() {
   });
 
   const userName = user?.name || user?.email?.split('@')[0] || 'Team Member';
+  const isRecruiterStaff = isAdmin || isEmployer || isRecruitment || isBD;
 
   const focusRingDark = isDark ? 'focus-visible:ring-offset-zinc-950' : 'focus-visible:ring-offset-white';
 
-  // Data-driven quick actions for the hero. First item is the primary CTA;
-  // the rest render as secondary ghost buttons. Legacy /iq/advanced-filter was
-  // removed with the IQ module and now maps to the jobs-based candidate search.
-  const heroActions = [
-    { key: 'candidates', label: 'Candidate search', to: '/jobs/find-candidate', icon: Search, primary: true },
-    isEmployer || isAdmin
-      ? { key: 'post-job', label: 'Post a job', to: '/jobs/posting-job', icon: PlusCircle }
-      : { key: 'browse-jobs', label: 'Browse jobs', to: '/jobs/jobs', icon: Briefcase },
-    { key: 'calendar', label: 'Interview calendar', to: '/jobs/calendar', icon: Calendar },
-    { key: 'resume-scorer', label: 'AI resume scorer', to: '/jobs/resume-scorer', icon: Sparkles },
-  ];
+  // Role-specific Hero Actions
+  const heroActions = isSeeker
+    ? [
+        { key: 'browse-jobs', label: 'Browse Jobs', to: '/jobs/jobs', icon: Briefcase, primary: true },
+        { key: 'my-applications', label: 'My Applications', to: '/jobs/my-jobs', icon: FileText },
+        { key: 'resume-scorer', label: 'AI Resume Scorer', to: '/jobs/resume-scorer', icon: Sparkles },
+      ]
+    : [
+        { key: 'candidates', label: 'Candidate Search', to: '/jobs/find-candidate', icon: Search, primary: true },
+        isEmployer || isAdmin
+          ? { key: 'post-job', label: 'Post a Job', to: '/jobs/posting-job', icon: PlusCircle }
+          : { key: 'browse-jobs', label: 'Browse Jobs', to: '/jobs/jobs', icon: Briefcase },
+        { key: 'calendar', label: 'Interview Calendar', to: '/jobs/calendar', icon: Calendar },
+        { key: 'resume-scorer', label: 'AI Resume Scorer', to: '/jobs/resume-scorer', icon: Sparkles },
+      ];
 
-  // Metric cards — pure typographic hierarchy, no icon-in-a-box chip.
-  const metricCards = [
-    { key: 'candidates', label: 'Candidates in intelligence', value: stats.candidateCount, to: '/jobs/find-candidate', icon: Users, visible: true },
-    { key: 'jobs', label: 'Active job posts', value: stats.activeJobsCount, to: isEmployer || isAdmin ? '/jobs/active-jobs' : '/jobs/jobs', icon: Briefcase, visible: true },
-    { key: 'applications', label: 'Total applications', value: stats.totalApplications, to: isEmployer || isAdmin ? '/jobs/applicants' : '/jobs/my-jobs', icon: FileText, visible: true },
-    { key: 'interviews', label: 'Interviews scheduled', value: stats.scheduledInterviews, to: '/jobs/calendar', icon: Calendar, visible: true },
-    { key: 'approvals', label: 'Pending approvals', value: stats.pendingApprovals, to: '/admin/employer-approvals', icon: CheckCircle2, visible: isAdmin },
-  ];
+  // Role-filtered Metric Cards
+  const metricCards = isSeeker
+    ? [
+        { key: 'jobs', label: 'Active Openings', value: stats.activeJobsCount, to: '/jobs/jobs', icon: Briefcase, visible: true },
+        { key: 'applications', label: 'My Applications', value: stats.totalApplications, to: '/jobs/my-jobs', icon: FileText, visible: true },
+        { key: 'interviews', label: 'Upcoming Interviews', value: stats.scheduledInterviews, to: '/jobs/calendar', icon: Calendar, visible: true },
+      ]
+    : [
+        { key: 'candidates', label: 'Candidates in Intelligence', value: stats.candidateCount, to: '/jobs/find-candidate', icon: Users, visible: true },
+        { key: 'jobs', label: 'Active Job Posts', value: stats.activeJobsCount, to: '/jobs/active-jobs', icon: Briefcase, visible: true },
+        { key: 'applications', label: 'Total Applications', value: stats.totalApplications, to: '/jobs/applicants', icon: FileText, visible: true },
+        { key: 'interviews', label: 'Interviews Scheduled', value: stats.scheduledInterviews, to: '/jobs/calendar', icon: Calendar, visible: true },
+        { key: 'approvals', label: 'Pending Approvals', value: stats.pendingApprovals, to: '/admin/employer-approvals', icon: CheckCircle2, visible: isAdmin },
+      ];
 
-  // Candidate intelligence module — previously "Saarthi IQ", now routed to the
-  // active jobs-based candidate search & analytics after the IQ module removal.
+  // Candidate Intelligence Module (Staff Only)
   const candidateIntelCards = [
     {
       key: 'search',
-      title: 'Advanced search',
+      title: 'Advanced Search',
       desc: 'Search by skills, experience, location, and department remarks.',
       to: '/jobs/find-candidate',
       icon: Search,
@@ -79,7 +89,7 @@ export default function UnifiedDashboard() {
     },
     {
       key: 'reports',
-      title: 'Activity reports',
+      title: 'Activity Reports',
       desc: 'Export candidate and recruiter activity, remarks history, and click logs.',
       to: '/jobs/view-analytics',
       icon: FileSpreadsheet,
@@ -87,7 +97,7 @@ export default function UnifiedDashboard() {
     },
     {
       key: 'overview',
-      title: 'Pipeline overview',
+      title: 'Pipeline Overview',
       desc: 'Department metrics across business development, recruitment, and franchise.',
       to: '/jobs/view-analytics',
       icon: TrendingUp,
@@ -95,11 +105,12 @@ export default function UnifiedDashboard() {
     },
   ];
 
-  const recruitmentCards = isEmployer || isAdmin
+  // Recruitment/Job Operations Cards
+  const recruitmentCards = isRecruiterStaff
     ? [
         {
           key: 'active-jobs',
-          title: 'Active job posts',
+          title: 'Active Job Posts',
           desc: 'Manage open positions, edit descriptions, and close filled roles.',
           to: '/jobs/active-jobs',
           icon: Briefcase,
@@ -107,17 +118,25 @@ export default function UnifiedDashboard() {
         },
         {
           key: 'applicants',
-          title: 'Applicants pipeline',
+          title: 'Applicants Pipeline',
           desc: 'Review incoming candidates, shortlist, and trigger interview scheduling.',
           to: '/jobs/applicants',
           icon: Users,
           cta: 'Review applicants',
         },
+        {
+          key: 'resume-scorer',
+          title: 'AI Resume Scorer',
+          desc: 'Calculate match score between resumes and job descriptions instantly.',
+          to: '/jobs/resume-scorer',
+          icon: Sparkles,
+          cta: 'Score resume',
+        },
       ]
     : [
         {
           key: 'find-jobs',
-          title: 'Explore job openings',
+          title: 'Explore Job Openings',
           desc: 'Search verified jobs matching your skills and experience level.',
           to: '/jobs/jobs',
           icon: Search,
@@ -125,21 +144,21 @@ export default function UnifiedDashboard() {
         },
         {
           key: 'my-applications',
-          title: 'My applications',
+          title: 'My Applications',
           desc: 'Track application progress, review statuses, and interview requests.',
           to: '/jobs/my-jobs',
           icon: Briefcase,
           cta: 'Track status',
         },
+        {
+          key: 'resume-scorer',
+          title: 'AI Resume Scorer',
+          desc: 'Assess and optimize your resume match against target job roles.',
+          to: '/jobs/resume-scorer',
+          icon: Sparkles,
+          cta: 'Score resume',
+        },
       ];
-  recruitmentCards.push({
-    key: 'resume-scorer',
-    title: 'AI resume scorer',
-    desc: 'Calculate match score between resumes and job descriptions instantly.',
-    to: '/jobs/resume-scorer',
-    icon: Sparkles,
-    cta: 'Score resume',
-  });
 
   const upcomingInterviews = [
     { key: '1', role: 'Senior React Developer', meta: 'Technical round · 2:00 PM', when: 'Today' },
@@ -147,9 +166,9 @@ export default function UnifiedDashboard() {
   ];
 
   const adminQuickLinks = [
-    { key: 'approvals', label: 'Employer approvals', badge: '4 pending', to: '/admin/employer-approvals', icon: CheckCircle2 },
-    { key: 'broadcast', label: 'Broadcast campaigns', to: '/admin/send-email', icon: Mail },
-    { key: 'users', label: 'User directory', to: '/admin/users', icon: Users },
+    { key: 'approvals', label: 'Employer Approvals', badge: '4 pending', to: '/admin/employer-approvals', icon: CheckCircle2 },
+    { key: 'broadcast', label: 'Broadcast Campaigns', to: '/admin/send-email', icon: Mail },
+    { key: 'users', label: 'User Directory', to: '/admin/users', icon: Users },
   ];
 
   const surfaceCard = isDark
@@ -162,17 +181,15 @@ export default function UnifiedDashboard() {
   const textPrimary = isDark ? 'text-zinc-100' : 'text-neutral-900';
   const textSecondary = isDark ? 'text-zinc-400' : 'text-neutral-500';
   const textMuted = isDark ? 'text-zinc-500' : 'text-neutral-400';
-  const borderColor = isDark ? 'border-zinc-800' : 'border-neutral-200';
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
-
       {/* 1. Welcome Hero */}
       <div className={`rounded-lg p-6 sm:p-8 lg:p-10 border ${isDark ? 'bg-black border-zinc-800' : 'bg-neutral-900 border-neutral-800'}`}>
         <div className="max-w-3xl">
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[11px] font-medium text-neutral-300 mb-4">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Saarthi unified enterprise platform</span>
+            <span>Saarthi Unified Enterprise Platform</span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white mb-3">
@@ -180,8 +197,9 @@ export default function UnifiedDashboard() {
           </h1>
 
           <p className="text-neutral-400 text-sm leading-relaxed mb-6">
-            Access candidate intelligence, manage job pipelines, review applications, and coordinate team
-            operations from your unified command center.
+            {isSeeker
+              ? 'Explore career opportunities, track your active applications, and optimize your resume.'
+              : 'Access candidate intelligence, manage job pipelines, review applications, and coordinate operations.'}
           </p>
 
           <div className="flex flex-wrap gap-2.5">
@@ -203,8 +221,8 @@ export default function UnifiedDashboard() {
         </div>
       </div>
 
-      {/* 2. Platform Overview Metrics — typographic hierarchy, no icon chips */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      {/* 2. Platform Overview Metrics */}
+      <div className={`grid grid-cols-2 md:grid-cols-${metricCards.filter((c) => c.visible).length} gap-4`}>
         {metricCards
           .filter((card) => card.visible)
           .map((card) => (
@@ -224,54 +242,60 @@ export default function UnifiedDashboard() {
 
       {/* 3. Core Functional Modules */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {/* Left: Candidate Intelligence + Recruitment Operations */}
-        <div className="lg:col-span-2 space-y-6">
-
-          <div className={`rounded-lg border p-6 sm:p-8 ${surfaceCard}`}>
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className={`text-base font-semibold ${textPrimary}`}>Candidate intelligence</h2>
-                <p className={`text-xs mt-0.5 ${textSecondary}`}>Filter, evaluate, and extract candidate analytics</p>
-              </div>
-              <Link
-                to="/jobs/find-candidate"
-                className={`text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 inline-flex items-center rounded-sm ${focusRing} ${focusRingDark}`}
-              >
-                Open <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {candidateIntelCards.map((card) => (
+        {/* Left / Center: Operational Modules */}
+        <div className={`${isRecruiterStaff ? 'lg:col-span-2' : 'lg:col-span-3'} space-y-6`}>
+          {/* Candidate Intelligence (Recruiters / Admins Only) */}
+          {isRecruiterStaff && (
+            <div className={`rounded-lg border p-6 sm:p-8 ${surfaceCard}`}>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className={`text-base font-semibold ${textPrimary}`}>Candidate Intelligence</h2>
+                  <p className={`text-xs mt-0.5 ${textSecondary}`}>Filter, evaluate, and extract candidate analytics</p>
+                </div>
                 <Link
-                  key={card.key}
-                  to={card.to}
-                  className={`p-4 rounded-md border transition-colors flex flex-col justify-between ${tileSurface} ${focusRing} ${focusRingDark}`}
+                  to="/jobs/find-candidate"
+                  className={`text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 inline-flex items-center rounded-sm ${focusRing} ${focusRingDark}`}
                 >
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <card.icon className={`w-4 h-4 ${textSecondary}`} />
-                      <h3 className={`text-sm font-medium ${textPrimary}`}>{card.title}</h3>
-                    </div>
-                    <p className={`text-xs leading-relaxed ${textSecondary}`}>{card.desc}</p>
-                  </div>
-                  <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mt-4 inline-flex items-center">
-                    {card.cta} <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                  </span>
+                  Open <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
                 </Link>
-              ))}
-            </div>
-          </div>
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {candidateIntelCards.map((card) => (
+                  <Link
+                    key={card.key}
+                    to={card.to}
+                    className={`p-4 rounded-md border transition-colors flex flex-col justify-between ${tileSurface} ${focusRing} ${focusRingDark}`}
+                  >
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <card.icon className={`w-4 h-4 ${textSecondary}`} />
+                        <h3 className={`text-sm font-medium ${textPrimary}`}>{card.title}</h3>
+                      </div>
+                      <p className={`text-xs leading-relaxed ${textSecondary}`}>{card.desc}</p>
+                    </div>
+                    <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mt-4 inline-flex items-center">
+                      {card.cta} <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Job Operations / Seeker Hub */}
           <div className={`rounded-lg border p-6 sm:p-8 ${surfaceCard}`}>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className={`text-base font-semibold ${textPrimary}`}>Recruitment & job operations</h2>
-                <p className={`text-xs mt-0.5 ${textSecondary}`}>Pipeline management, postings, and applicant tracking</p>
+                <h2 className={`text-base font-semibold ${textPrimary}`}>
+                  {isSeeker ? 'Job Opportunities & Applications' : 'Recruitment & Job Operations'}
+                </h2>
+                <p className={`text-xs mt-0.5 ${textSecondary}`}>
+                  {isSeeker ? 'Manage your job search and active applications' : 'Pipeline management, postings, and applicant tracking'}
+                </p>
               </div>
               <Link
-                to={isEmployer ? '/jobs/poster-dashboard' : '/jobs/jobs'}
+                to={isSeeker ? '/jobs/jobs' : isEmployer ? '/jobs/poster-dashboard' : '/jobs/jobs'}
                 className={`text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 inline-flex items-center rounded-sm ${focusRing} ${focusRingDark}`}
               >
                 Explore <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
@@ -301,98 +325,99 @@ export default function UnifiedDashboard() {
           </div>
         </div>
 
-        {/* Right: Calendar + Admin Widgets */}
-        <div className="space-y-6">
+        {/* Right Column: Calendar + Admin Widgets */}
+        {isRecruiterStaff && (
+          <div className="space-y-6">
+            <div className={`rounded-lg border p-6 ${surfaceCard}`}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={`text-sm font-semibold ${textPrimary}`}>Upcoming Calendar</h3>
+                <Link
+                  to="/jobs/calendar"
+                  className={`text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 rounded-sm ${focusRing} ${focusRingDark}`}
+                >
+                  View all
+                </Link>
+              </div>
 
-          <div className={`rounded-lg border p-6 ${surfaceCard}`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className={`text-sm font-semibold ${textPrimary}`}>Upcoming calendar</h3>
+              <p className={`text-xs mb-4 ${textSecondary}`}>
+                You have {stats.scheduledInterviews} interview sessions lined up this week.
+              </p>
+
+              <div className="space-y-2">
+                {upcomingInterviews.map((item) => (
+                  <div
+                    key={item.key}
+                    className={`p-3 rounded-md border flex items-center justify-between ${
+                      isDark ? 'bg-zinc-800/60 border-zinc-700' : 'bg-neutral-50 border-neutral-200'
+                    }`}
+                  >
+                    <div>
+                      <p className={`text-xs font-medium ${isDark ? 'text-zinc-200' : 'text-neutral-800'}`}>{item.role}</p>
+                      <p className={`text-[11px] mt-0.5 ${textSecondary}`}>{item.meta}</p>
+                    </div>
+                    <span
+                      className={`text-[11px] font-medium px-2 py-0.5 rounded-md border ${
+                        isDark ? 'text-zinc-400 bg-zinc-900 border-zinc-700' : 'text-neutral-500 bg-white border-neutral-200'
+                      }`}
+                    >
+                      {item.when}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
               <Link
                 to="/jobs/calendar"
-                className={`text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 rounded-sm ${focusRing} ${focusRingDark}`}
+                className={`mt-4 w-full py-2.5 rounded-md text-xs font-medium transition-colors flex items-center justify-center ${focusRing} ${focusRingDark} ${
+                  isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200' : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
+                }`}
               >
-                View all
+                Open Interactive Calendar
               </Link>
             </div>
 
-            <p className={`text-xs mb-4 ${textSecondary}`}>
-              You have {stats.scheduledInterviews} interview sessions lined up this week.
-            </p>
-
-            <div className="space-y-2">
-              {upcomingInterviews.map((item) => (
-                <div
-                  key={item.key}
-                  className={`p-3 rounded-md border flex items-center justify-between ${
-                    isDark ? 'bg-zinc-800/60 border-zinc-700' : 'bg-neutral-50 border-neutral-200'
-                  }`}
-                >
-                  <div>
-                    <p className={`text-xs font-medium ${isDark ? 'text-zinc-200' : 'text-neutral-800'}`}>{item.role}</p>
-                    <p className={`text-[11px] mt-0.5 ${textSecondary}`}>{item.meta}</p>
-                  </div>
-                  <span
-                    className={`text-[11px] font-medium px-2 py-0.5 rounded-md border ${
-                      isDark ? 'text-zinc-400 bg-zinc-900 border-zinc-700' : 'text-neutral-500 bg-white border-neutral-200'
-                    }`}
-                  >
-                    {item.when}
-                  </span>
+            {isAdmin && (
+              <div className={`rounded-lg border p-6 ${surfaceCard}`}>
+                <div className="flex items-center gap-2 mb-4">
+                  <ShieldCheck className={`w-4 h-4 ${textSecondary}`} />
+                  <h3 className={`text-sm font-semibold ${textPrimary}`}>Admin Control Center</h3>
                 </div>
-              ))}
-            </div>
 
-            <Link
-              to="/jobs/calendar"
-              className={`mt-4 w-full py-2.5 rounded-md text-xs font-medium transition-colors flex items-center justify-center ${focusRing} ${focusRingDark} ${
-                isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200' : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
-              }`}
-            >
-              Open interactive calendar
-            </Link>
+                <p className={`text-xs mb-4 ${textSecondary}`}>Administrative quick tools for system management</p>
+
+                <div className="space-y-1">
+                  {adminQuickLinks.map((link) => (
+                    <Link
+                      key={link.key}
+                      to={link.to}
+                      className={`flex items-center justify-between p-3 rounded-md border transition-colors ${focusRing} ${focusRingDark} ${
+                        isDark
+                          ? 'border-zinc-800 hover:bg-zinc-800 text-zinc-300'
+                          : 'border-neutral-100 hover:bg-neutral-50 text-neutral-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <link.icon className={`w-4 h-4 ${textSecondary}`} />
+                        <span className="text-xs font-medium">{link.label}</span>
+                      </div>
+                      {link.badge ? (
+                        <span
+                          className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                            isDark ? 'bg-zinc-800 text-zinc-300' : 'bg-neutral-100 text-neutral-700'
+                          }`}
+                        >
+                          {link.badge}
+                        </span>
+                      ) : (
+                        <ChevronRight className={`w-4 h-4 ${textMuted}`} />
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-
-          {isAdmin && (
-            <div className={`rounded-lg border p-6 ${surfaceCard}`}>
-              <div className="flex items-center gap-2 mb-4">
-                <ShieldCheck className={`w-4 h-4 ${textSecondary}`} />
-                <h3 className={`text-sm font-semibold ${textPrimary}`}>Admin control center</h3>
-              </div>
-
-              <p className={`text-xs mb-4 ${textSecondary}`}>Administrative quick tools for system management</p>
-
-              <div className="space-y-1">
-                {adminQuickLinks.map((link) => (
-                  <Link
-                    key={link.key}
-                    to={link.to}
-                    className={`flex items-center justify-between p-3 rounded-md border transition-colors ${focusRing} ${focusRingDark} ${
-                      isDark
-                        ? 'border-zinc-800 hover:bg-zinc-800 text-zinc-300'
-                        : 'border-neutral-100 hover:bg-neutral-50 text-neutral-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <link.icon className={`w-4 h-4 ${textSecondary}`} />
-                      <span className="text-xs font-medium">{link.label}</span>
-                    </div>
-                    {link.badge ? (
-                      <span
-                        className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                          isDark ? 'bg-zinc-800 text-zinc-300' : 'bg-neutral-100 text-neutral-700'
-                        }`}
-                      >
-                        {link.badge}
-                      </span>
-                    ) : (
-                      <ChevronRight className={`w-4 h-4 ${textMuted}`} />
-                    )}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

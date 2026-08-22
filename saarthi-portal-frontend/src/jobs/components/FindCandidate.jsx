@@ -211,8 +211,8 @@ const FindCandidate = () => {
 
       console.log("Searching with params:", params.toString());
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/search/candidates?${params}`,
+     const response = await fetch(
+  `${API_BASE_URL}/api/candidates/search?${params}`,
         {
           method: "GET",
           headers: {

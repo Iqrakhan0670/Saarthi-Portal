@@ -78,30 +78,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Posting Profile (employer profile)
-    if (path === "postingprofile") {
-      if (req.method === "GET") {
-        const { data, error } = await supabase.from("users").select("id, full_name, email, phone, company_name, location").eq("id", authResult.id).single();
-        if (error || !data) return new Response(JSON.stringify({ success: true, profile: {} }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        return new Response(JSON.stringify(data), {
-          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (req.method === "PUT" || req.method === "POST") {
-        const body = await req.json();
-        const { error } = await supabase.from("users").update({
-          full_name: body.full_name || body.name,
-          company_name: body.company_name || body.companyName,
-          phone: body.phone,
-          location: body.location,
-        }).eq("id", authResult.id);
-        if (error) throw error;
-        return new Response(JSON.stringify({ success: true, message: "Posting profile updated" }), {
-          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    }
-
     // =====================================================================
     // Jobs Routes (Strict Employer Scoping & Ownership Verification)
     // =====================================================================
@@ -295,6 +271,262 @@ Deno.serve(async (req) => {
           status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+    }
+
+    // Update application status (PATCH/PUT /applications/:id or /applications/:id/status)
+    if (path.startsWith("applications/") && (req.method === "PATCH" || req.method === "PUT")) {
+      const segments = path.split("/");
+      const appId = segments[1];
+
+      if (appId && appId !== "for-job" && appId !== "my-applications") {
+        const { data: app, error: appErr } = await supabase
+          .from("applications")
+          .select("*, jobs(user_id)")
+          .eq("id", appId)
+          .single();
+
+        if (appErr || !app) {
+          return new Response(JSON.stringify({ error: "Application not found" }), {
+            status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (app.jobs?.user_id !== authResult.id && !authResult.is_admin) {
+          return new Response(JSON.stringify({ error: "Forbidden: You do not own this job" }), {
+            status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const body = await req.json();
+        const { data: updated, error: updateErr } = await supabase
+          .from("applications")
+          .update({ status: body.status })
+          .eq("id", appId)
+          .select()
+          .single();
+        if (updateErr) throw updateErr;
+
+        return new Response(JSON.stringify({ success: true, application: updated }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+
+    // Update or delete a specific scheduled interview
+    if (path.startsWith("scheduled-interviews/")) {
+      const interviewId = path.split("/")[1];
+
+      if (interviewId) {
+        // Verify caller owns this interview (via application -> job)
+        const { data: si, error: siErr } = await supabase
+          .from("scheduled_interviews")
+          .select("*, applications(user_id, jobs(user_id))")
+          .eq("id", interviewId)
+          .single();
+
+        if (siErr || !si) {
+          return new Response(JSON.stringify({ error: "Scheduled interview not found" }), {
+            status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const app = si.applications;
+        const ownsIt = app?.user_id === authResult.id || app?.jobs?.user_id === authResult.id;
+        if (!ownsIt && !authResult.is_admin) {
+          return new Response(JSON.stringify({ error: "Forbidden" }), {
+            status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        if (req.method === "PUT" || req.method === "PATCH") {
+          const body = await req.json();
+          const updateData: any = {};
+          if (body.interview_date !== undefined) updateData.interview_date = body.interview_date;
+          if (body.interview_time !== undefined) updateData.interview_time = body.interview_time;
+          if (body.status !== undefined) updateData.status = body.status;
+
+          const { data: updated, error: updateErr } = await supabase
+            .from("scheduled_interviews")
+            .update(updateData)
+            .eq("id", interviewId)
+            .select()
+            .single();
+          if (updateErr) throw updateErr;
+
+          return new Response(JSON.stringify({ success: true, interview: updated }), {
+            status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        if (req.method === "DELETE") {
+          const { error: deleteErr } = await supabase
+            .from("scheduled_interviews")
+            .delete()
+            .eq("id", interviewId);
+          if (deleteErr) throw deleteErr;
+
+          return new Response(JSON.stringify({ success: true, message: "Interview cancelled" }), {
+            status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    }
+
+    // =====================================================================
+    // Analytics (Scoped to caller's own jobs)
+    // =====================================================================
+    if (path.startsWith("analytics/")) {
+      const analyticsType = path.split("/")[1];
+
+      const buildReport = async (fromDate: string | null, toDate: string | null) => {
+        const { data: jobs, error: jobsErr } = await supabase
+          .from("jobs")
+          .select("id, job_title, created_at")
+          .eq("user_id", authResult.id);
+        if (jobsErr) throw jobsErr;
+
+        const jobIds = (jobs || []).map((j: any) => j.id);
+        let applications: any[] = [];
+        if (jobIds.length > 0) {
+          let query = supabase.from("applications").select("*").in("job_id", jobIds);
+          if (fromDate) query = query.gte("created_at", fromDate);
+          if (toDate) query = query.lte("created_at", toDate + "T23:59:59");
+          const { data: apps, error: appsErr } = await query;
+          if (appsErr) throw appsErr;
+          applications = apps || [];
+        }
+
+        const jobsInRange = fromDate
+          ? (jobs || []).filter((j: any) => {
+              const created = new Date(j.created_at);
+              const from = new Date(fromDate);
+              const to = toDate ? new Date(toDate + "T23:59:59") : new Date();
+              return created >= from && created <= to;
+            })
+          : (jobs || []);
+
+        return {
+          success: true,
+          totalJobs: jobsInRange.length,
+          totalApplications: applications.length,
+          applied: applications.filter((a) => a.status === "applied").length,
+          underReview: applications.filter((a) => a.status === "under_review").length,
+          interviews: applications.filter((a) => a.status === "interview").length,
+          hired: applications.filter((a) => a.status === "hired").length,
+          rejected: applications.filter((a) => a.status === "rejected").length,
+          jobs: jobsInRange,
+          applications,
+        };
+      };
+
+      if (analyticsType === "one-click" && req.method === "GET") {
+        const period = url.searchParams.get("period") || "yesterday";
+        const now = new Date();
+        let from: Date;
+        if (period === "thisWeek") {
+          from = new Date(now);
+          from.setDate(now.getDate() - now.getDay());
+        } else if (period === "thisMonth") {
+          from = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else {
+          from = new Date(now);
+          from.setDate(now.getDate() - 1);
+        }
+        const report = await buildReport(from.toISOString().split("T")[0], now.toISOString().split("T")[0]);
+        return new Response(JSON.stringify(report), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (analyticsType === "overall" && req.method === "GET") {
+        const report = await buildReport(null, null);
+        return new Response(JSON.stringify({ ...report, type: "overall" }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (analyticsType === "custom" && req.method === "GET") {
+        const from = url.searchParams.get("from");
+        const to = url.searchParams.get("to");
+        const report = await buildReport(from, to);
+        return new Response(JSON.stringify(report), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Subscription and export not yet implemented — return safe defaults
+      if (analyticsType === "subscription") {
+        if (req.method === "GET") {
+          return new Response(JSON.stringify({ success: true, id: null, active: false }), {
+            status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (req.method === "POST") {
+          return new Response(JSON.stringify({ success: true, message: "Subscription saving not yet available" }), {
+            status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    }
+
+    // =====================================================================
+    // Posting Profile (Company Profile - scoped to caller's own user row)
+    // =====================================================================
+    if (path === "postingprofile" && req.method === "GET") {
+      const { data: userRow, error: userErr } = await supabase
+        .from("users")
+        .select("company_name, industry, location, email, phone, website, description, employees, founded")
+        .eq("id", authResult.id)
+        .single();
+
+      if (userErr) {
+        return new Response(JSON.stringify({ error: userErr.message }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({
+        company_name: userRow.company_name || "",
+        industry: userRow.industry || "",
+        location: userRow.location || "",
+        email: userRow.email || "",
+        phone: userRow.phone || "",
+        website: userRow.website || "",
+        description: userRow.description || "",
+        employees: userRow.employees || "",
+        founded: userRow.founded || "",
+      }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (path === "postingprofile" && req.method === "PUT") {
+      const body = await req.json();
+
+      const { error: updateErr } = await supabase
+        .from("users")
+        .update({
+          company_name: body.companyName,
+          industry: body.industry,
+          location: body.location,
+          email: body.email,
+          phone: body.phone,
+          website: body.website,
+          description: body.description,
+          employees: body.employees,
+          founded: body.founded,
+        })
+        .eq("id", authResult.id);
+
+      if (updateErr) {
+        return new Response(JSON.stringify({ error: updateErr.message }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, message: "Profile updated successfully" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // =====================================================================

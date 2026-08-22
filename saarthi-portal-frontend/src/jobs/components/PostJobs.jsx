@@ -915,7 +915,7 @@ const PostJobs = () => {
       }
 
       if (response.ok) {
-        alert("Job posted successfully! Job ID: " + data.jobId);
+        alert("Job posted successfully! Job ID: " + data.job.id);
         setFormData({
           postingAs: "company",
           consultancyHiringFor: "",
